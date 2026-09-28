@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Knowledge Base</title><style>
+  :root{
+    --brand-50:#ECF3FF; --brand-100:#DDE9FF; --brand-500:#465FFF; --brand-600:#3641F5;
+    --g-25:#FCFCFD; --g-50:#F9FAFB; --g-100:#F2F4F7; --g-200:#E4E7EC; --g-300:#D0D5DD;
+    --g-400:#98A2B3; --g-500:#667085; --g-600:#475467; --g-700:#344054; --g-800:#1D2939; --g-900:#101828;
+    --link:#1100D8; --link-hover:#0e00b8; --success-500:#12B76A; --success-50:#ECFDF3;
+    --error-500:#F04438; --error-50:#FEF3F2; --danger:#EF4444; --purple:#5b0678;
+    --blue-600:#2563EB; --blue-700:#1D4ED8; --blue-50:#EFF6FF; --blue-500:#3B82F6;
+    --yellow-100:#FEF9C3; --yellow-200:#FEF08A; --yellow-500:#EAB308; --yellow-800:#854D0E;
+    --sidebar:290px; --sidebar-collapsed:90px; --header:70px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:'Outfit',sans-serif;font-size:16px;background:#fff;color:var(--g-900);-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit}
+  svg{display:block}
+
+  /* ---- sidebar (AppSidebar.tsx) ---- */
+  .sidebar{position:fixed;left:0;top:0;height:100vh;width:var(--sidebar);background:#fff;
+           border-right:1px solid var(--g-200);padding:0 20px;z-index:50;display:flex;flex-direction:column;
+           transition:width .3s ease-in-out}
+  .brand{padding:24px 0;display:flex;justify-content:center;cursor:pointer}
+  .brand img{width:75%;height:auto}
+  .brand .hname{font-size:17px;font-weight:600;color:var(--g-900);text-align:center;line-height:1.25}
+  .navscroll{display:flex;flex-direction:column;flex-grow:1;overflow-y:auto;margin-top:16px;scrollbar-width:none}
+  .navscroll::-webkit-scrollbar{display:none}
+  .navsec{margin-bottom:16px;font-size:12px;line-height:20px;text-transform:uppercase;color:var(--g-400);display:flex}
+  nav{margin-bottom:24px}
+  nav>ul{display:flex;flex-direction:column;gap:16px;list-style:none;margin:0;padding:0}
+  .menu-item{position:relative;display:flex;align-items:center;width:100%;gap:12px;padding:8px 12px;
+             font-weight:500;border-radius:8px;font-size:14px;line-height:20px;cursor:pointer;
+             background:none;border:0;text-align:left;color:var(--g-700)}
+  .menu-item-active{background:var(--brand-50);color:var(--brand-500)}
+  .menu-item-inactive:hover{background:var(--g-100)}
+  .menu-item .ic{flex:none;display:block}
+  .menu-item .ic svg{width:24px!important;height:24px!important;color:var(--g-500)}
+  .menu-item-active .ic svg{color:var(--brand-500)}
+  .menu-item .label{flex:1}
+  .menu-item .caret{margin-left:auto;width:20px;height:20px;flex:none;transition:transform .2s}
+  .menu-item .caret svg{width:20px;height:20px}
+  .menu-item.open .caret{transform:rotate(180deg);color:var(--brand-500)}
+  .submenu{overflow:hidden;transition:height .3s;height:0}
+  .submenu>ul{margin:8px 0 0 36px;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+  .menu-dropdown-item{position:relative;display:flex;align-items:center;gap:12px;border-radius:8px;
+                      padding:10px 12px;font-size:14px;line-height:20px;font-weight:500;color:var(--g-700);cursor:pointer}
+  .menu-dropdown-item:hover{background:var(--g-100)}
+  .menu-dropdown-item.active{background:var(--brand-50);color:var(--brand-500)}
+  .count{display:none;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;
+         margin-left:auto;font-size:12px;font-weight:500;color:#fff;background:var(--danger);border-radius:9999px}
+  .count.show{display:inline-flex}
+  .poweredby{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 0}
+  .poweredby p{margin:0 0 8px;font-size:12px;color:var(--purple)}
+  .poweredby img{width:150px;height:40px;object-fit:contain}
+  .setuplink{display:block;margin-bottom:10px;font-size:12px;color:var(--g-500);text-decoration:underline}
+  .setuplink:hover{color:var(--brand-500)}
+  .setuplink.on{color:var(--brand-500);font-weight:600}
+
+  /* collapsed (hamburger) */
+  body.nav-collapsed .sidebar{width:var(--sidebar-collapsed)}
+  body.nav-collapsed .sidebar .label,
+  body.nav-collapsed .sidebar .caret,
+  body.nav-collapsed .sidebar .count,
+  body.nav-collapsed .submenu,
+  body.nav-collapsed .poweredby,
+  body.nav-collapsed .navsec span{display:none}
+  body.nav-collapsed .menu-item{justify-content:center}
+  body.nav-collapsed .main{margin-left:var(--sidebar-collapsed)}
+
+  /* ---- header (AppHeader.tsx) ---- */
+  .main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column;transition:margin-left .3s}
+  .topbar{position:sticky;top:0;z-index:40;background:#fff;border-bottom:1px solid var(--g-200);display:flex;width:100%}
+  .topbar .inner{display:flex;align-items:center;justify-content:space-between;flex-grow:1;padding:12px;height:var(--header)}
+  .topbar h1{font-size:20px;font-weight:600;color:var(--g-800);margin:0}
+  .topbar .left{display:flex;align-items:center;gap:16px}
+  .topbar .right{display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-left:auto}
+  .hamburger{display:flex;align-items:center;justify-content:center;width:44px;height:44px;color:var(--g-500);
+             border:1px solid var(--g-200);border-radius:8px;background:#fff;cursor:pointer}
+  .hamburger:hover{background:var(--g-50)}
+  .bell{position:relative;display:flex;align-items:center;justify-content:center;height:44px;width:44px;
+        color:var(--g-500);border:1px solid var(--g-200);border-radius:9999px;background:#fff;cursor:pointer}
+  .bell:hover{background:var(--g-100)}
+  .bell svg{width:20px;height:20px}
+  .bell .dot{position:absolute;right:-5px;top:-5px;height:20px;width:20px;border-radius:9999px;
+             border:1px solid #fff;background:var(--g-400)}
+  .avatar{width:40px;height:40px;border-radius:9999px;overflow:hidden;background:#fff;border:0;padding:0;cursor:pointer}
+  .avatar svg{width:40px;height:40px;border-radius:9999px}
+  @media (min-width:1024px){ .topbar .inner{padding:16px 24px} }
+
+  /* ---- page ---- */
+  .content{padding:16px;max-width:1536px;width:100%;margin:0 auto}
+  @media (min-width:768px){ .content{padding:24px} }
+  .page{display:flex;flex-direction:column;padding:24px;height:100%}
+  .pagehead{margin-bottom:24px}
+  .pagehead h2{font-size:24px;font-weight:600;color:var(--g-800);margin:0 0 8px}
+  .pagehead p{font-size:14px;color:var(--g-500);margin:0}
+  .scopewarn{margin:0 0 16px;border:1px solid #FEC84B;background:#FFFAEB;color:#93370D;
+             border-radius:12px;padding:12px 16px;font-size:13px}
+  .placeholder{display:flex;align-items:center;justify-content:center;height:320px;color:var(--g-500);font-size:14px;
+               border:1px dashed var(--g-300);border-radius:12px;text-align:center;padding:24px}
+
+  /* ---- tabs (RequestsTab.tsx) ---- */
+  .tabs{width:100%;border-bottom:4px solid var(--g-200);display:flex;align-items:center;gap:6px;margin-bottom:16px}
+  .tab{padding:8px 12px;height:36px;font-size:14px;font-weight:300;color:var(--g-900);background:none;border:0;cursor:pointer;white-space:nowrap}
+  .tab:hover{color:var(--g-900)}
+  .tab.active{font-weight:700;border-bottom:3px solid var(--g-900);margin-bottom:-2px;padding-top:.5px;padding-bottom:.5px}
+
+  /* ---- toolbar (RequestsToolbar.tsx + SearchBar.tsx) ---- */
+  .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px}
+  .tbleft{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:260px}
+  .tbright{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:0 0 auto}
+  .iconbtn{padding:8px;border-radius:6px;border:1px solid var(--g-200);background:#fff;cursor:pointer;
+           display:inline-flex;align-items:center;justify-content:center;color:var(--g-600)}
+  .iconbtn:hover{background:var(--g-100)}
+  .iconbtn svg{width:20px;height:20px}
+  .searchwrap{display:flex;align-items:center;width:100%;flex:1}
+  .searchrel{position:relative;flex-grow:1}
+  .searchrel input{width:100%;padding:8px 48px 8px 12px;border:1px solid var(--g-300);border-radius:4px;
+                   background:var(--g-50);color:var(--g-800);font:inherit;font-size:14px;outline:none}
+  .searchrel input:focus{box-shadow:0 0 0 2px var(--blue-500)}
+  .clearx{position:absolute;right:12px;top:10px;background:none;border:0;color:var(--g-400);cursor:pointer;padding:0}
+  .clearx:hover{color:var(--g-600)}
+  .clearx svg{width:20px;height:20px}
+  .searchgo{margin-left:8px;background:var(--blue-600);color:#fff;padding:8px;border-radius:4px;border:0;cursor:pointer;
+            display:inline-flex;align-items:center;justify-content:center}
+  .searchgo:hover{background:var(--blue-700)}
+  .searchgo svg{width:20px;height:20px}
+  .chip{background:#fff;border:1px solid var(--g-100);border-radius:8px}
+  .chip button{color:var(--g-900);background:none;border:0;cursor:pointer;padding:0}
+  .chip .in{display:flex;align-items:center;gap:8px;margin:0 8px;font-weight:300;font-size:14px;padding:8px}
+  .chip .in svg{width:20px;height:20px}
+  .sel{position:relative;display:inline-block;width:224px}
+  .sel>button{display:flex;width:100%;align-items:center;justify-content:space-between;padding:8px 16px;
+              font-size:14px;color:var(--g-900);background:#fff;border:1px solid var(--g-200);border-radius:6px;cursor:pointer}
+  .sel>button:hover{background:var(--g-100)}
+  .sel>button>span:first-child{padding:0 16px}
+  .sel>button svg{width:16px;height:16px}
+  .menu{position:absolute;z-index:60;left:0;top:calc(100% + 8px);min-width:100%;background:#fff;
+        border:1px solid var(--g-200);border-radius:12px;
+        box-shadow:0 12px 16px -4px rgba(16,24,40,.08),0 4px 6px -2px rgba(16,24,40,.03);padding:8px;display:none}
+  .menu.open{display:block}
+  .menu button{display:block;width:100%;text-align:left;padding:8px 16px;font-size:14px;border:0;background:none;
+               border-radius:6px;cursor:pointer;color:var(--g-700)}
+  .menu button:hover{background:var(--g-100);color:var(--g-900)}
+  /* The in-row status dropdown. Fixed minimum so the button does not resize as the label
+     changes between "Submitted" and "In Progress". */
+  .rowstatus{width:auto;min-width:120px}
+  .rowstatus>button{padding:6px 10px}
+  .rowstatus>button>span:first-child{padding:0}
+  /* Fixed, not absolute. .tablewrap declares overflow-x:auto, which silently computes overflow-y
+     from visible to auto, making it a scroll box on both axes — an absolutely-positioned menu is
+     then clipped to the table and adds a scrollbar instead of floating over the page. Fixed
+     positioning escapes that; JS sets left/top from the trigger's rect. */
+  .rowstatus .menu{position:fixed;min-width:150px;left:0;top:0}
+  .starbtn{display:flex;align-items:center;justify-content:center;padding:8px 16px;font-size:14px;border-radius:6px;
+           border:1px solid var(--g-200);background:#fff;color:var(--g-900);cursor:pointer}
+  .starbtn svg{width:20px;height:20px}
+  .starbtn.on{background:var(--yellow-100);color:var(--yellow-800);border-color:var(--yellow-200)}
+
+  /* ---- table (GeneralReqs.tsx) ---- */
+  .tablewrap{flex:1;overflow-x:auto;overflow-y:visible}
+  table{min-width:100%;width:100%;border-collapse:collapse}
+  thead{border-bottom:3px solid var(--g-200)}
+  thead th,thead td{font-weight:300;font-size:.875rem;color:var(--g-900);text-align:start;white-space:nowrap;padding:12px 4px 12px 8px}
+  thead td.star{width:48px;padding:12px 8px}
+  th.c-guest{width:192px;padding:12px 4px 12px 8px}
+  th.c-room{width:128px;padding:12px 4px 12px 4px}
+  th.c-status{padding:12px 8px 12px 4px}
+  th.c-time{padding:12px 16px 12px 8px}
+  th.c-last{width:160px;padding:12px 8px}
+  tbody tr{border-top:1px solid var(--g-200);cursor:pointer}
+  tbody tr:first-child{border-top:0}
+  tbody tr:hover{background:var(--g-50)}
+  tbody tr.done{background:var(--g-50)}
+  /* Deliberately NOT the .sel class: that one is the dropdown wrapper, and its
+     display:inline-block / width:224px were landing on the <tr> too, collapsing the row. */
+  tbody tr.rowsel{background:var(--blue-50);box-shadow:inset 4px 0 0 0 var(--blue-500)}
+  tbody td{font-size:.875rem;font-weight:300;color:var(--link);vertical-align:middle;white-space:nowrap;padding:12px 4px 12px 8px}
+  tbody td.star{width:48px;padding:12px 8px}
+  tbody td.c-status{min-width:120px;padding:12px 8px 12px 4px}
+  tbody td.c-time{padding:12px 16px 12px 8px}
+  .starcell{background:none;border:0;cursor:pointer;padding:0;color:var(--g-500);display:inline-flex}
+  .starcell svg{width:20px;height:20px}
+  .starcell.on{color:var(--yellow-500)}
+  .statusbtn{display:inline-flex;align-items:center;border:1px solid var(--g-300);border-radius:4px;
+             padding:4px 8px;font-size:14px;background:var(--g-50);color:var(--g-900);cursor:pointer}
+  .statusbtn:hover{background:var(--g-100)}
+  .statusbtn>span{margin-right:8px;white-space:nowrap}
+  .statusbtn svg{width:16px;height:16px}
+  .empty{display:flex;align-items:center;justify-content:center;height:256px;color:var(--g-500);font-size:14px}
+
+  /* ---- pagination ---- */
+  .pager{margin-top:16px;display:flex;align-items:center;justify-content:space-between}
+  .pager .grp{display:flex;align-items:center;gap:8px}
+  .pager span{font-size:14px;color:var(--g-600)}
+  .pager select{border:1px solid var(--g-300);border-radius:4px;padding:4px 32px 4px 12px;font:inherit;font-size:14px;background:#fff}
+  .pager button{padding:4px 12px;border:1px solid var(--g-300);border-radius:4px;background:#fff;cursor:pointer;font:inherit;font-size:14px}
+  .pager button:disabled{opacity:.5;cursor:default}
+  .pager button:not(:disabled):hover{background:var(--g-50)}
+
+  /* ---- drawer ---- */
+  /* Starts below the header (z-index 40) rather than over it, so the hamburger stays clickable
+     while a drawer is open. */
+  .backdrop{position:fixed;inset:var(--header) 0 0 0;z-index:39;display:none}
+  .backdrop.open{display:block}
+  .drawer{position:fixed;right:0;top:var(--header);width:30%;min-width:380px;height:calc(100vh - var(--header));
+          background:#fff;z-index:50;padding:20px;overflow-y:auto;transform:translateX(100%);
+          transition:transform .3s ease-in-out;box-shadow:0 0 15px rgba(0,0,0,.1)}
+  .drawer.open{transform:translateX(0)}
+  .dnav{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .dnav .grp{display:flex;align-items:center;gap:8px}
+  /* Room-service order lines, at the prices quoted. */
+  .otable{width:100%;border-collapse:collapse;font-size:13px}
+  .otable th{text-align:left;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--g-500);
+             font-weight:500;padding:0 0 6px;border-bottom:1px solid var(--g-200)}
+  .otable td{padding:8px 0;border-bottom:1px solid var(--g-100);vertical-align:top;color:var(--g-800)}
+  .otable .oqty{width:52px;text-align:center}
+  .otable .oamt{width:88px;text-align:right;font-variant-numeric:tabular-nums}
+  .otable .ototal td{font-weight:600;border-bottom:0;padding-top:10px}
+  .oinstr{display:block;font-size:12px;color:var(--g-500);margin-top:2px}
+  /* Dispatch trail — who was told, on what channel, and whether it worked. */
+  .drow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--g-100)}
+  /* Outbound to the guest, as opposed to inbound to a department. Tinted so the two
+     directions of the trail are distinguishable at a glance. */
+  .drow.toguest{background:#F9FAFB;margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:6px}
+  .drow:last-child{border-bottom:0}
+  .dchip{font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 8px;border-radius:6px;white-space:nowrap}
+  .dchip.ok{background:#ECFDF3;color:#067647;border:1px solid #ABEFC6}
+  .dchip.sim{background:#F2F4F7;color:#475467;border:1px solid #E4E7EC}
+  .dchip.bad{background:#FEF3F2;color:#B42318;border:1px solid #FECDCA}
+  .dwho{font-size:13px;color:var(--g-800)}
+  .dwhen{font-size:12px;color:var(--g-500);margin-left:auto}
+  .daddr{flex-basis:100%;font-size:12px;color:var(--g-500)}
+  .dmuted{font-size:13px;color:var(--g-500);margin:6px 0}
+  /* How a request arrived. Voice is the one worth noticing. */
+  .chan{font-size:10px;font-weight:700;letter-spacing:.05em;padding:2px 6px;border-radius:5px;margin-left:6px;vertical-align:middle}
+  .chan.voice{background:#EEF4FF;color:#3538CD;border:1px solid #C7D7FE}
+  .chan.text{background:#F4F3FF;color:#5925DC;border:1px solid #D9D6FE}
+  .chan.unver{background:#FFFAEB;color:#B54708;border:1px solid #FEDF89}
+  .hotelswitch{display:flex;align-items:center;gap:8px;margin-right:12px;font-size:13px;color:var(--g-500)}
+  .hotelswitch select{font:inherit;color:var(--g-800);padding:6px 10px;border:1px solid var(--g-300);
+    border-radius:8px;background:#fff;max-width:220px}
+  .chan.notified{background:#ECFDF3;color:#067647;border:1px solid #ABEFC6}
+  /* Amber, not green: the request is legitimate but the caller was not the named guest. */
+  .chan.companion{background:#FFFAEB;color:#B54708;border:1px solid #FEDF89}
+  .pill{border:0;background:none;border-radius:9999px;padding:8px;cursor:pointer;color:var(--g-900);display:inline-flex}
+  .pill:hover{background:var(--g-100)}
+  .pill:disabled{opacity:.5;cursor:not-allowed}
+  .pill svg{width:20px;height:20px}
+  .pill.rot svg{transform:rotate(180deg)}
+  .dstar{display:flex;align-items:center;gap:20px;margin-bottom:16px}
+  .dstar p{margin:0;font-weight:300;color:var(--g-500);font-style:italic}
+  .dstatus{display:flex;align-items:center;margin-bottom:16px}
+  .dstatus>p{margin:0 8px 0 0;font-weight:500;color:var(--g-900)}
+  .dnote{font-size:12px;color:var(--g-500);margin:0 0 8px}
+  .drawer h3{font-size:18px;font-weight:600;color:var(--g-900);margin:0 0 8px;border-bottom:1px solid var(--g-200);padding-bottom:4px}
+  .drawer h3.noline{border-bottom:0;padding-bottom:0;margin-bottom:16px}
+  .dsec{margin-bottom:16px}
+  .desc{background:var(--g-50);border:1px solid var(--g-200);border-radius:8px;padding:16px}
+  .desc p{margin:0;font-weight:300;color:var(--g-900);font-size:16px;line-height:1.625;word-break:break-word}
+  .kv{display:flex;align-items:flex-start;font-size:14px;margin-bottom:12px}
+  .kv .k{width:112px;flex:none;font-weight:500;color:var(--g-700);margin:0}
+  .kv .v{font-weight:300;color:var(--g-900);word-break:break-word;margin:0}
+  .msgbox{border:1px solid var(--g-300);border-radius:8px;overflow:hidden}
+  .msgbox input{width:100%;padding:8px 12px;background:#fff;color:var(--g-900);border:0;
+                border-bottom:1px solid var(--g-300);font:inherit;font-size:14px;outline:none}
+  .msgtype{padding:8px 12px;border-bottom:1px solid var(--g-300)}
+  .msgtype label{display:block;font-size:12px;font-weight:500;color:var(--g-500);margin-bottom:4px}
+  .msgtype select{width:100%;background:#fff;color:var(--g-900);font:inherit;font-size:14px;border-radius:6px;
+                  padding:4px;border:1px solid var(--g-300);outline:none}
+  .msgbox textarea{width:100%;padding:8px 12px 0;background:#fff;color:var(--g-900);border:0;
+                   font:inherit;font-size:14px;outline:none;resize:vertical;min-height:74px}
+  .msgbtns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  .msgbtns button{width:100%;padding:8px 16px;font-size:14px;font-weight:500;border-radius:6px;cursor:pointer}
+  .btn-ghost{color:var(--g-700);background:var(--g-100);border:1px solid var(--g-300)}
+  .btn-ghost:hover{background:var(--g-200)}
+  .btn-send{color:#fff;background:var(--link);border:0}
+  .btn-send:hover{background:var(--link-hover)}
+  .btn-send:disabled{opacity:.5;cursor:not-allowed}
+
+  /* ---- alert / toast (Alert.tsx) ---- */
+  .alert{border-radius:12px;border:1px solid var(--success-500);background:var(--success-50);padding:16px;
+         display:flex;align-items:flex-start;gap:12px}
+  .alert .ai{margin-top:-2px;color:var(--success-500);flex:none}
+  .alert h4{margin:0 0 4px;font-size:14px;font-weight:600;color:var(--g-800)}
+  .alert p{margin:0;font-size:14px;color:var(--g-500)}
+  .toast{position:fixed;bottom:16px;right:16px;z-index:50;display:none}
+  .toast.show{display:block}
+  .sel.picked > button{border-color:var(--brand-300,#B2CCFF);background:var(--brand-50,#F5F8FF);color:var(--g-800);font-weight:500}
+  .inlinealert{margin-top:12px;display:none}
+  .inlinealert.show{display:block}
+  /* Failure variant of the same alert/toast markup. Every write used to swallow its errors, so a
+     rejected request looked identical to a dead button — which is exactly how the status dropdown
+     hid for two rounds of "it doesn't work". */
+  .alert.bad{border-color:var(--error-500,#F04438);background:var(--error-50,#FEF3F2)}
+  .alert.bad .ai{color:var(--error-500,#F04438)}
+
+  /* ---- ground-truth page ---- */
+  .gt h3{font-size:16px;font-weight:600;color:var(--g-800);margin:28px 0 10px;border-bottom:0;padding-bottom:0}
+  .gt table{border:1px solid var(--g-200);border-radius:8px;overflow:hidden}
+  .gt tbody td{color:var(--g-700)}
+  .gt tbody tr{cursor:default}
+  .gt tr.here td{background:var(--success-50)}
+
+  /* ---- control panel ---- */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px}
+  .card{border:1px solid var(--g-200);border-radius:16px;background:#fff}
+  .card>h3{margin:0;padding:20px 24px;font-size:16px;font-weight:600;color:var(--g-800);border-bottom:0}
+  .card>h3 small{display:block;margin-top:4px;font-size:13px;font-weight:400;color:var(--g-500)}
+  .card>.body{padding:20px 24px;border-top:1px solid var(--g-100)}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:500;color:var(--g-700);margin-bottom:6px}
+  .field input,.field select,.field textarea{width:100%;padding:9px 12px;border:1px solid var(--g-300);border-radius:8px;
+    font:inherit;font-size:14px;color:var(--g-800);background:#fff;outline:none}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--brand-500);box-shadow:0 0 0 4px rgba(70,95,255,.12)}
+  .field textarea{min-height:120px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:8px;
+       border:0;background:var(--brand-500);color:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+  .btn:hover{background:var(--brand-600)}
+  .btn:disabled{background:#9CB9FF;cursor:default}
+  .btn.ghost{background:#fff;color:var(--g-700);border:1px solid var(--g-300)}
+  .btn.ghost:hover{background:var(--g-50)}
+  .btn.danger{background:#fff;color:#B42318;border:1px solid #FDA29B}
+  .btn.danger:hover{background:var(--error-50)}
+  .result{margin-top:14px;border-radius:8px;padding:12px 14px;font-size:13px;display:none}
+  .result.ok{display:block;background:var(--success-50);border:1px solid var(--success-500);color:#054F31}
+  .result.err{display:block;background:var(--error-50);border:1px solid var(--error-500);color:#912018}
+  .statgrid{display:grid;grid-template-columns:1fr;gap:10px}
+  .stat{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:8px 0;border-bottom:1px solid var(--g-100)}
+  .stat .l{color:var(--g-500)}
+  .stat .v{color:var(--g-900);font-weight:500;text-align:right;word-break:break-word}
+  .hint{font-size:12px;color:var(--g-500);margin-top:8px;line-height:1.5}
+  code{background:var(--g-100);border-radius:4px;padding:1px 5px;font-size:12px}
+
+  @media (max-width:1024px){ .sidebar{display:none} .main{margin-left:0} .drawer{width:100%;min-width:0} }
+
+  /* KPI tiles. Not .statgrid — that is a single-column label/value list for the setup card, and
+     reusing it here rendered three full-width bars instead of a row of tiles. */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+  .kpi{border:1px solid var(--g-200);border-radius:12px;background:#fff;padding:16px 18px}
+  .kpi b{display:block;font-size:26px;font-weight:600;color:var(--g-900);line-height:1.15}
+  .kpi span{display:block;font-size:13px;color:var(--g-500);margin-top:4px}
+  /* The journey reads left to right as a flow, the way Braze Canvas and Customer.io lay one out —
+     the shape of the path is the thing you are meant to see, which a stacked list cannot show. */
+  .canvas{display:flex;gap:0;align-items:stretch;overflow-x:auto;padding:4px 2px 18px}
+  /* The columns share the width so the whole journey is on screen at once — the point of a canvas
+     over a list. min-width:0 matters: without it a flex item cannot shrink below its content, and
+     one long unwrapped message body was stretching a stage to 580px and pushing three of the five
+     off the right edge. */
+  .col{flex:1 1 190px;min-width:0;display:flex;flex-direction:column}
+  @media (max-width:1100px){ .col{flex:0 0 210px} }
+  .col > .hd{padding:0 4px 10px}
+  .col .stg{font-size:13px;font-weight:600;color:var(--g-800)}
+  .col .when{font-size:11px;color:var(--g-500);margin-top:2px}
+  .col .here{font-size:11px;color:#3538CD;margin-top:4px;font-weight:500}
+  .col .track{flex:1;display:flex;flex-direction:column;gap:10px;padding:12px 10px;border-radius:12px;
+    background:var(--g-50,#F9FAFB);border:1px dashed var(--g-200);min-height:190px}
+  .link{flex:0 0 26px;display:flex;align-items:center;justify-content:center;color:var(--g-300);padding-top:64px}
+  .node{background:#fff;border:1px solid var(--g-200);border-radius:10px;padding:11px 12px;cursor:pointer;
+    min-width:0;overflow-wrap:anywhere;
+    box-shadow:0 1px 2px rgba(16,24,40,.05);transition:border-color .12s,box-shadow .12s}
+  .node:hover{border-color:#B2CCFF;box-shadow:0 3px 10px rgba(16,24,40,.10)}
+  .node .k{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--g-500)}
+  .node .ttl{display:block;font-size:13px;font-weight:500;color:var(--g-800);margin-top:4px;line-height:1.35}
+  .node .sub{font-size:12px;color:var(--g-500);margin-top:5px;line-height:1.45;display:-webkit-box;
+    -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .node .foot{margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .node.msg{border-left:3px solid #3538CD}
+  .node.wait{border-left:3px solid #B54708;background:#FFFCF5}
+  .node.split{border-left:3px solid #067647;background:#F6FEF9}
+  .node.paused{opacity:.62}
+  .branch{display:grid;grid-template-columns:1fr;gap:4px;margin-top:8px;min-width:0}
+  .branch span{font-size:11px;color:var(--g-500);background:#fff;border:1px solid var(--g-200);
+    border-radius:6px;padding:3px 7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .addnode{border:1px dashed var(--g-300);border-radius:10px;background:transparent;color:var(--g-500);
+    font:inherit;font-size:12px;padding:9px;cursor:pointer}
+  .addnode:hover{border-color:#B2CCFF;color:#3538CD}
+  .tag{font-size:11px;font-weight:600;letter-spacing:.04em;padding:2px 7px;border-radius:5px;
+    background:#EEF4FF;color:#3538CD;border:1px solid #C7D7FE}
+  .tag.off{background:var(--g-100);color:var(--g-500);border-color:var(--g-200)}
+  .tag.sms{background:#ECFDF3;color:#067647;border-color:#ABEFC6}
+  .tag.email{background:#FFFAEB;color:#B54708;border-color:#FEDF89}
+  .linkbtn{background:none;border:0;padding:0;font:inherit;color:#3538CD;cursor:pointer;font-size:12px}
+  .linkbtn.danger{color:#B42318}
+  /* Knowledge base: a collections rail, mixed sources, and the gaps the voice channel already
+     knows about — the pattern Intercom and Zendesk both lead with. */
+  .kbwrap{display:grid;grid-template-columns:176px minmax(0,1fr) 286px;gap:16px;align-items:start}
+  @media (max-width:1240px){ .kbwrap{grid-template-columns:176px minmax(0,1fr)} .kbside{grid-column:1/-1} }
+  .rail{border:1px solid var(--g-200);border-radius:12px;background:#fff;padding:6px}
+  .rail button{display:flex;width:100%;align-items:center;gap:8px;background:none;border:0;font:inherit;
+    text-align:left;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--g-800);font-size:13px}
+  .rail button:hover{background:var(--g-50,#F9FAFB)}
+  .rail button.on{background:#EEF4FF;color:#3538CD;font-weight:500}
+  .rail button .c{margin-left:auto;font-size:11px;color:var(--g-500)}
+  .rail button.on .c{color:#3538CD}
+  .drop{border:2px dashed var(--g-300);border-radius:12px;background:var(--g-50,#F9FAFB);padding:22px 16px;
+    text-align:center;color:var(--g-500);font-size:13px;transition:border-color .12s,background .12s}
+  .drop.over{border-color:#3538CD;background:#EEF4FF;color:#3538CD}
+  .drop b{display:block;color:var(--g-800);font-size:14px;font-weight:500;margin-bottom:3px}
+  .field textarea.prose{font-family:inherit;font-size:13px;line-height:1.55;min-height:96px}
+  .drop.over b{color:#3538CD}
+  .gap{border:1px solid var(--g-200);border-radius:10px;padding:11px 12px;margin-bottom:10px;background:#fff}
+  .gap .q{font-size:13px;color:var(--g-800);font-weight:500}
+  /* Two facts that share a line when they fit and stack when they do not. A middle separator was
+     left orphaned at the end of the first line every time it wrapped, so the gap does the work. */
+  .gap .m{font-size:12px;color:var(--g-500);margin-top:4px;display:flex;gap:3px 10px;align-items:baseline;
+    flex-wrap:wrap}
+  .gap .m b{color:#B54708;white-space:nowrap}
+  .gap .m span{white-space:nowrap}
+  .gap .act{margin-top:7px}
+  .src{font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 6px;border-radius:5px;
+    background:var(--g-100);color:var(--g-500);border:1px solid var(--g-200)}
+  .src.pdf{background:#FEF3F2;color:#B42318;border-color:#FECDCA}
+  .src.doc{background:#EFF8FF;color:#175CD3;border-color:#B2DDFF}
+  .kbrow td .t{font-weight:500;color:var(--g-800)}
+  /* The source title and summary were greedy enough to push the table past its container, so the
+     action buttons sat off the right edge — in the DOM, off the screen. A max-width on the first
+     column was not enough once the rail and the side panel took their share of the width: the
+     table still sized itself to its content. Fixed layout is what actually holds, so the three
+     narrow columns are declared and the title column takes whatever is left and ellipsises. */
+  .kbtable{table-layout:fixed;width:100%}
+  .kbtable th:nth-child(2),.kbtable td:nth-child(2){width:66px}
+  .kbtable th:nth-child(3),.kbtable td:nth-child(3){width:80px}
+  .kbtable th:nth-child(4),.kbtable td:nth-child(4){width:152px}
+  .kbrow td:first-child{max-width:0}
+  .kbrow td .t,.kbrow td .s{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .kbrow td.kbact{white-space:nowrap;text-align:right}
+  .kbrow td .s{font-size:12px;color:var(--g-500);margin-top:2px}
+  /* Named .twocol, not .split: the journey canvas has a Split node, and .node.split was picking
+     up this display:grid and laying the node's own contents out as grid columns — the title and
+     branches spilled over the next stage. */
+  .twocol{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
+  @media (max-width:1100px){ .twocol{grid-template-columns:1fr} }
+  .toggle{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid var(--g-100)}
+  .toggle:last-child{border-bottom:0}
+  .toggle input{margin-top:3px;width:16px;height:16px;flex:none}
+  .toggle .t{font-size:14px;color:var(--g-800)}
+  .toggle .d{font-size:12px;color:var(--g-500);margin-top:2px}
+  .preview{background:var(--g-800,#1D2939);color:#E4E7EC;border-radius:12px;padding:16px;font-size:13px;line-height:1.55}
+  .preview .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#98A2B3;margin-bottom:6px}
+  .preview .say{background:rgba(255,255,255,.06);border-radius:9px;padding:10px 12px;margin-bottom:10px}
+  .preview .say:last-child{margin-bottom:0}
+</style>  <link rel="stylesheet" href="assets/fonts.css">
+  <script src="assets/snapshot.js"></script>
+  <script src="assets/offline.js"></script>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <a class="brand" href="index.html" id="brandLink">
+      <img id="hotelLogo" alt="Hotel Logo" style="display:none" />
+      <span class="hname" id="hotelName">&nbsp;</span>
+    </a>
+    <div class="navscroll">
+      <nav>
+        <div class="navsec"><span>Navigation</span></div>
+        <ul>
+          <li>
+            <button class="menu-item menu-item-inactive" data-submenu="requests">
+              <span class="ic"><svg width="18" height="13" viewBox="0 0 18 13" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 0.5C9.47739 0.5 9.93523 0.680612 10.2728 1.0021C10.6104 1.32359 10.8 1.75963 10.8 2.21429C10.8 2.42 10.764 2.61714 10.692 2.80571C14.355 3.5 17.1 6.42286 17.1 9.92857H0.9C0.9 6.42286 3.645 3.5 7.308 2.80571C7.236 2.61714 7.2 2.42 7.2 2.21429C7.2 1.75963 7.38964 1.32359 7.72721 1.0021C8.06477 0.680612 8.52261 0.5 9 0.5ZM18 12.5H0V10.7857H18V12.5Z" fill="currentColor"/></svg></span><span class="label">Guest Requests</span>
+              <span class="caret"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <div class="submenu" data-for="requests">
+              <ul>
+                <li class="menu-dropdown-item" data-board="general"><span class="label">General</span><span class="count" id="c-general">0</span></li>
+                <li class="menu-dropdown-item" data-board="dining"><span class="label">In-Room Dining</span><span class="count" id="c-dining">0</span></li>
+                <li class="menu-dropdown-item" data-board="reservations"><span class="label">Reservations</span><span class="count" id="c-reservations">0</span></li>
+                <li class="menu-dropdown-item" data-nav="messages"><span class="label">Message History</span></li>
+              </ul>
+            </div>
+          </li>
+          <li>
+            <button class="menu-item menu-item-inactive" data-submenu="data">
+              <span class="ic"><svg width="20" height="11" viewBox="0 0 20 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 10.5V2.5H0V0.5H4V10.5H2ZM20 8.5C20 9.61 19.1 10.5 18 10.5H14V8.5H18V6.5H16V4.5H18V2.5H14V0.5H18C18.5304 0.5 19.0391 0.710714 19.4142 1.08579C19.7893 1.46086 20 1.96957 20 2.5V4C20 4.39782 19.842 4.77936 19.5607 5.06066C19.2794 5.34196 18.8978 5.5 18.5 5.5C18.8978 5.5 19.2794 5.65804 19.5607 5.93934C19.842 6.22064 20 6.60218 20 7V8.5ZM12 8.5V10.5H6V6.5C6 5.39 6.9 4.5 8 4.5H10V2.5H6V0.5H10C10.5304 0.5 11.0391 0.710714 11.4142 1.08579C11.7893 1.46086 12 1.96957 12 2.5V4.5C12 5.61 11.1 6.5 10 6.5H8V8.5H12Z" fill="currentColor"/></svg></span><span class="label">Data Management</span>
+              <span class="caret"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <div class="submenu" data-for="data">
+              <ul>
+                <li class="menu-dropdown-item" data-nav="data" data-section="property"><span class="label">Hotel Info</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="restaurants"><span class="label">Restaurants</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="menu"><span class="label">Menu Items</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="menu"><span class="label">Room Service</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="housekeeping"><span class="label">Housekeeping</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="facilities"><span class="label">Facilities</span></li>
+                <li class="menu-dropdown-item" data-nav="soon"><span class="label">Special Events</span></li>
+                <li class="menu-dropdown-item" data-nav="soon"><span class="label">Special Products</span></li>
+              </ul>
+            </div>
+          </li>
+          <li>
+            <button class="menu-item menu-item-inactive open menu-item-active" data-submenu="ai">
+              <span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M10.5 2.25 12.28 7.22 17.25 9 12.28 10.78 10.5 15.75 8.72 10.78 3.75 9 8.72 7.22 10.5 2.25Z"/><path d="M17.75 13.5 18.68 16.32 21.5 17.25 18.68 18.18 17.75 21 16.82 18.18 14 17.25 16.82 16.32 17.75 13.5Z"/></svg></span><span class="label">AI Concierge</span>
+              <span class="caret"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <div class="submenu" data-for="ai">
+              <ul>
+                <li class="menu-dropdown-item" data-nav="page" data-page="journeys.html"><span class="label">Guest Journeys</span></li>
+                <li class="menu-dropdown-item active" data-nav="page" data-page="knowledge.html"><span class="label">Knowledge Base</span></li>
+                <li class="menu-dropdown-item" data-nav="page" data-page="agent.html"><span class="label">Agent Settings</span></li>
+                <li class="menu-dropdown-item" data-nav="page" data-page="calls.html"><span class="label">Call Transcripts</span></li>
+                <li class="menu-dropdown-item" data-nav="page" data-page="chat.html"><span class="label">Text the Concierge</span></li>
+              </ul>
+            </div>
+          </li>
+          <li><a class="menu-item menu-item-inactive" data-nav="page" data-page="portfolio.html"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M3 21V6.75a1.5 1.5 0 0 1 1.06-1.43l6-1.85A1.5 1.5 0 0 1 12 4.9V21H3Zm2.6-11.4h2.2v2.1H5.6V9.6Zm0 4.2h2.2v2.1H5.6v-2.1ZM13.5 21V9.9l5.44 1.63A1.5 1.5 0 0 1 20 12.97V21h-6.5Zm2.1-6.3h2.2v2.1h-2.2v-2.1Z"/></svg></span><span class="label">Portfolio</span></a></li>
+          <li><a class="menu-item menu-item-inactive" data-nav="page" data-page="analytics.html"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="9" rx="1.5"/><rect x="9.75" y="7" width="4.5" height="14" rx="1.5"/><rect x="16.5" y="3" width="4.5" height="18" rx="1.5"/></svg></span><span class="label">Analytics</span></a></li>
+          <li><a class="menu-item menu-item-inactive" data-nav="page" data-page="staff.html"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z"/></svg></span><span class="label">Employee Management</span></a></li>
+          <li><a class="menu-item menu-item-inactive" data-nav="page" data-page="guests.html"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z"/><path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z"/></svg></span><span class="label">Guest Profiles</span></a></li>
+          <li><a class="menu-item menu-item-inactive" data-nav="soon"><span class="ic"><svg width="5" height="5" viewBox="0 0 10 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.66667 5.1C1.66667 4.165 2.41667 3.4 3.33333 3.4H10L13.3333 0H15V13.6H13.3333L10 10.2H3.33333C2.89131 10.2 2.46738 10.0209 2.15482 9.70208C1.84226 9.38327 1.66667 8.95087 1.66667 8.5H0V5.1H1.66667ZM8.33333 12.75V17H5.83333L4.44167 12.75H3.33333V11.05H10V12.75H8.33333Z" fill="currentColor"/></svg></span><span class="label">Announcements</span></a></li>
+          <li><a class="menu-item menu-item-inactive" data-nav="soon"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 0 0-.986.57c-.166.115-.334.126-.45.083L6.3 5.508a1.875 1.875 0 0 0-2.282.819l-.922 1.597a1.875 1.875 0 0 0 .432 2.385l.84.692c.095.078.17.229.154.43a7.598 7.598 0 0 0 0 1.139c.015.2-.059.352-.153.43l-.841.692a1.875 1.875 0 0 0-.432 2.385l.922 1.597a1.875 1.875 0 0 0 2.282.818l1.019-.382c.115-.043.283-.031.45.082.312.214.641.405.985.57.182.088.277.228.297.35l.178 1.071c.151.904.933 1.567 1.85 1.567h1.844c.916 0 1.699-.663 1.85-1.567l.178-1.072c.02-.12.114-.26.297-.349.344-.165.673-.356.985-.57.167-.114.335-.125.45-.082l1.02.382a1.875 1.875 0 0 0 2.28-.819l.923-1.597a1.875 1.875 0 0 0-.432-2.385l-.84-.692c-.095-.078-.17-.229-.154-.43a7.614 7.614 0 0 0 0-1.139c-.016-.2.059-.352.153-.43l.84-.692c.708-.582.891-1.59.433-2.385l-.922-1.597a1.875 1.875 0 0 0-2.282-.818l-1.02.382c-.114.043-.282.031-.449-.083a7.49 7.49 0 0 0-.985-.57c-.183-.087-.277-.227-.297-.348l-.179-1.072a1.875 1.875 0 0 0-1.85-1.567h-1.843ZM12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z"/></svg></span><span class="label">Settings</span></a></li>
+        </ul>
+      </nav>
+      <div class="poweredby">
+        <a class="setuplink" href="setup.html">Demo setup</a>
+        <p>Powered by</p>
+        <img src="assets/selfserve-logo.png" alt="Logo" width="150" height="40" />
+      </div>
+    </div>
+  </aside>
+<div class="main">
+
+  <header class="topbar"><div class="inner">
+    <div class="left">
+      <button class="hamburger" id="navToggle" aria-label="Toggle Sidebar"><svg width="16" height="12" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M0.583252 1C0.583252 0.585788 0.919038 0.25 1.33325 0.25H14.6666C15.0808 0.25 15.4166 0.585786 15.4166 1C15.4166 1.41421 15.0808 1.75 14.6666 1.75L1.33325 1.75C0.919038 1.75 0.583252 1.41422 0.583252 1ZM0.583252 11C0.583252 10.5858 0.919038 10.25 1.33325 10.25L7.99992 10.25C8.41413 10.25 8.74992 10.5858 8.74992 11C8.74992 11.4142 8.41413 11.75 7.99992 11.75L1.33325 11.75C0.919038 11.75 0.583252 11.4142 0.583252 11ZM1.33325 5.25C0.919038 5.25 0.583252 5.58579 0.583252 6C0.583252 6.41421 0.919038 6.75 1.33325 6.75L14.6666 6.75C15.0808 6.75 15.4166 6.41421 15.4166 6C15.4166 5.58579 15.0808 5.25 14.6666 5.25L1.33325 5.25Z" fill="currentColor"/></svg></button>
+      <h1>Management Dashboard</h1>
+    </div>
+    <div class="right">
+      <!-- Property switcher. The board and data pages scope to ?hotelId=, which previously could
+           only be set by typing a UUID into the URL — so a second property was effectively
+           invisible. Hidden until a page populates it (the setup page has its own pickers). -->
+      <label class="hotelswitch" id="hotelSwitchWrap" style="display:none">
+        <span>Property</span>
+        <select id="hotelSwitch" aria-label="Switch property"></select>
+      </label>
+      <button class="bell" aria-label="Push notifications"><span class="dot"></span><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.25 9a6.75 6.75 0 0 1 13.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 0 1-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 1 1-7.48 0 24.585 24.585 0 0 1-4.831-1.244.75.75 0 0 1-.298-1.205A8.217 8.217 0 0 0 5.25 9.75V9Zm4.502 8.9a2.25 2.25 0 1 0 4.496 0 25.057 25.057 0 0 1-4.496 0Z"/></svg></button>
+      <button class="avatar" aria-label="Open user menu"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" fill="#E4E7EC"/><circle cx="20" cy="15.5" r="6" fill="#98A2B3"/><path d="M8 34c0-6.075 5.373-11 12-11s12 4.925 12 11" fill="#98A2B3"/></svg></button>
+    </div>
+  </div></header>
+  <div class="content"><div class="page gt">
+    <div class="pagehead"><h2>Knowledge Base</h2><p>What the concierge knows about this property, and what it may say out loud.</p></div>
+    
+    <div class="kpis">
+      <div class="kpi"><b id="kTotal">0</b><span>Sources</span></div>
+      <div class="kpi"><b id="kVoice">0</b><span>Answerable by voice</span></div>
+      <div class="kpi"><b id="kGaps">0</b><span>Unanswered questions</span></div>
+    </div>
+    <div class="toolbar"><div class="tbleft">
+      <div class="searchwrap"><div class="searchrel">
+        <input id="kSearch" placeholder="Search everything the concierge knows..." /></div></div>
+    </div></div>
+    <div class="kbwrap">
+      <div class="rail" id="rail"></div>
+      <div>
+        <div class="tablewrap" style="margin-bottom:14px"><table class="kbtable"><thead><tr>
+          <th>Source</th><th>Type</th><th>Voice</th><th></th>
+        </tr></thead><tbody id="kBody"></tbody></table>
+        <div class="empty" id="kEmpty" style="display:none">Nothing here matches</div></div>
+        <div class="drop" id="drop">
+          <b>Drop menus, policies or rate sheets here</b>
+          PDF, Word or plain text &mdash; or <button class="linkbtn" id="pick">choose a file</button>
+          <input type="file" id="file" multiple style="display:none" />
+        </div>
+      </div>
+      <div class="kbside">
+        <div class="card" style="margin-bottom:16px">
+          <h3>Callers asked, nobody answered<small>Straight from the concierge line.</small></h3>
+          <div class="body" id="gaps"></div>
+        </div>
+        <div class="card">
+          <h3>Write an answer<small>The concierge reads these out word for word.</small></h3>
+          <div class="body">
+            <div class="field"><label>Question</label><input id="aTitle" placeholder="Do you have a late check-out?" /></div>
+            <div class="field"><label>Collection</label><input id="aCat" placeholder="Policies" /></div>
+            <div class="field"><label>Answer</label><textarea id="aBody" class="prose" rows="4"
+              placeholder="Late check-out until 2pm is complimentary when the room is free..."></textarea></div>
+            <div class="toggle"><input type="checkbox" id="aVoice" checked />
+              <div><div class="t">Answerable by voice</div>
+                <div class="d">Leave off for staff-only notes.</div></div></div>
+            <button class="btn" id="aAdd">Add answer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</div>
+<div class="toast" id="toast"><div class="alert"><span class="ai"></span><div><h4>Saved</h4><p></p></div></div></div>
+<script>
+
+  (function(){
+    function setH(el, open){ el.style.height = open ? (el.firstElementChild.offsetHeight + 8) + 'px' : '0px'; }
+    document.querySelectorAll('.menu-item[data-submenu]').forEach(function(btn){
+      var panel = document.querySelector('.submenu[data-for="' + btn.getAttribute('data-submenu') + '"]');
+      if(!panel) return;
+      setH(panel, btn.classList.contains('open'));
+      if(btn.classList.contains('open')) btn.classList.add('menu-item-active');
+      btn.addEventListener('click', function(){
+        var open = !btn.classList.contains('open');
+        btn.classList.toggle('open', open);
+        btn.classList.toggle('menu-item-active', open);
+        setH(panel, open);
+      });
+    });
+    var t = document.getElementById('navToggle');
+    if(t) t.addEventListener('click', function(){ document.body.classList.toggle('nav-collapsed'); });
+  })();
+
+
+  function navNotice(msg){
+    var n = document.getElementById('navNotice');
+    if(!n){
+      n = document.createElement('div');
+      n.id = 'navNotice';
+      n.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:80;' +
+        'background:#101828;color:#fff;font-size:14px;padding:12px 16px;border-radius:10px;' +
+        'box-shadow:0 8px 24px rgba(16,24,40,.24);max-width:min(560px,90vw);text-align:center';
+      document.body.appendChild(n);
+    }
+    n.textContent = msg;
+    n.style.display = 'block';
+    clearTimeout(n._t);
+    n._t = setTimeout(function(){ n.style.display = 'none'; }, 4000);
+  }
+
+  /**
+   * Populate the header's property switcher and navigate on change, preserving the current page.
+   * Called by whichever page has the hotel list; pages that do not call it keep it hidden.
+   */
+  function wireHotelSwitcher(hotels, currentId){
+    var wrap = document.getElementById('hotelSwitchWrap'), sel = document.getElementById('hotelSwitch');
+    if(!wrap || !sel || !hotels || hotels.length < 2) return;   // nothing to switch between
+    sel.innerHTML = hotels.map(function(h){
+      return '<option value="'+h.id+'"'+(h.id===currentId?' selected':'')+'>'+
+             String(h.name||'(unnamed)').replace(/[&<>"]/g, function(c){
+               return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; })+'</option>';
+    }).join('');
+    wrap.style.display = 'flex';
+    sel.onchange = function(){
+      var u = new URL(location.href);
+      u.searchParams.set('hotelId', sel.value);
+      location.href = u.toString();
+    };
+  }
+
+  function wireNav(hotelId, opts){
+    opts = opts || {};
+    var qs = hotelId ? ('?hotelId=' + encodeURIComponent(hotelId)) : '';
+    var NOT_IN_DEMO = 'That screen is part of the full SelfServe dashboard and is not included in this demo.';
+
+    document.querySelectorAll('.menu-dropdown-item[data-board]').forEach(function(li){
+      li.onclick = function(){
+        if(opts.onBoard) return opts.onBoard(li);
+        // Carry the chosen board across so the target page opens on it, rather than always General.
+        location.href = 'index.html' + qs + (qs ? '&' : '?') + 'board=' + encodeURIComponent(li.getAttribute('data-board'));
+      };
+    });
+
+    document.querySelectorAll('[data-nav="data"]').forEach(function(el){
+      var sec = el.getAttribute('data-section') || '';
+      el.onclick = function(){
+        if(opts.page === 'data'){
+          document.querySelectorAll('.menu-dropdown-item').forEach(function(x){ x.classList.remove('active'); });
+          el.classList.add('active');
+          var t = sec && document.getElementById('sec-' + sec);
+          if(t) t.scrollIntoView({ behavior:'smooth', block:'start' });
+          else navNotice('That section is still loading.');
+          return;
+        }
+        location.href = 'data.html' + qs + (sec ? ('#sec-' + sec) : '');
+      };
+    });
+
+    // Plain page destinations. Keeps ?hotelId= so the property survives the jump.
+    document.querySelectorAll('[data-nav="page"]').forEach(function(el){
+      el.onclick = function(){ location.href = el.getAttribute('data-page') + qs; };
+    });
+
+    document.querySelectorAll('[data-nav="soon"], [data-nav="messages"]').forEach(function(el){
+      el.onclick = function(){ navNotice(NOT_IN_DEMO); };
+    });
+
+    // The bell and the avatar were bound nowhere on any page, while the avatar advertised
+    // aria-label="Open user menu". Say what they are instead of leaving dead buttons.
+    var bell = document.querySelector('.topbar .bell');
+    if(bell) bell.onclick = function(){
+      navNotice('Push notifications go to the guest app in the full product. This demo notifies staff by SMS — see the Dispatch section of any request.');
+    };
+    var avatar = document.querySelector('.topbar .avatar');
+    if(avatar) avatar.onclick = function(){
+      navNotice('Signed in as the demo operator. Sign-in and roles are part of the full dashboard.');
+    };
+  }
+
+
+  var HOTEL_ID = new URLSearchParams(location.search).get('hotelId') || 'default';
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function key(name){ return 'selfserve:demo:' + name + ':' + HOTEL_ID; }
+  function load(name, seed){
+    try { var raw = localStorage.getItem(key(name)); if(raw) return JSON.parse(raw); } catch(e){}
+    return seed;
+  }
+  function save(name, value){
+    try { localStorage.setItem(key(name), JSON.stringify(value)); } catch(e){}
+  }
+  /**
+   * Fill in the property name and the header switcher, the same way the board and data pages do.
+   * These pages key their state per hotel, so being able to see and change which one you are on
+   * matters more here than it looks.
+   */
+  function loadProperty(then){
+    var qs = HOTEL_ID && HOTEL_ID !== 'default' ? ('?hotelId=' + encodeURIComponent(HOTEL_ID)) : '';
+    fetch('/demo/data.json' + qs, { cache:'no-store' })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var one = d.hotels && d.hotels.length === 1 ? d.hotels[0] : null;
+        var nm = document.getElementById('hotelName');
+        if(nm){ nm.style.display = 'block'; nm.textContent = (one && one.name) || 'All properties'; }
+        var brand = document.getElementById('brandLink');
+        if(brand) brand.setAttribute('href', 'index.html' + qs);
+        wireHotelSwitcher(d.allHotels, (one && one.id) || HOTEL_ID);
+        if(then) then((one && one.name) || 'the hotel');
+      })
+      .catch(function(){ if(then) then('the hotel'); });
+  }
+
+  var toastTimer = null;
+  function toast(title, body){
+    var t = document.getElementById('toast');
+    t.querySelector('h4').textContent = title || 'Saved';
+    t.querySelector('p').textContent = body || '';
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+  }
+  function uid(){ return 'x' + Math.random().toString(36).slice(2, 10); }
+
+
+  var SEED = [
+    { id:uid(), title:'Check-in and check-out times', cat:'Policies', voice:true, type:'Article',
+      body:'Check-in from 3pm, check-out by 11am. Early check-in and late check-out are offered when the room allows it, at no charge.' },
+    { id:uid(), title:'Pet policy', cat:'Policies', voice:true, type:'Article',
+      body:'Dogs are welcome in ground-floor rooms for 25 dollars a night. Let the front desk know in advance.' },
+    { id:uid(), title:'Parking', cat:'Facilities', voice:true, type:'Article',
+      body:'Free on-site parking, no permit needed. The lot is gravel and sits beside the rooms.' },
+    { id:uid(), title:'Dinner menu — autumn.pdf', cat:'Dining', voice:true, type:'PDF',
+      body:'Uploaded 14 August. 3 pages.' },
+    { id:uid(), title:'Breakfast service', cat:'Dining', voice:true, type:'Article',
+      body:'Breakfast runs 7.30am to 10.30am. Room service delivers until 10am.' },
+    { id:uid(), title:'Nearby walks and trails', cat:'Local area', voice:true, type:'Article',
+      body:'Trails start at the top of the property. The Mount Anthony loop is about two hours.' },
+    { id:uid(), title:'Escalation: guest complaints', cat:'Internal', voice:false, type:'Article',
+      body:'Billing or safety complaints go straight to the duty manager. Do not offer refunds on the phone.' }
+  ];
+  var GAPS = [
+    { q:'Do you have EV charging?', n:11, last:'last asked yesterday' },
+    { q:'Is there a shuttle from the airport?', n:7, last:'last asked 2 days ago' },
+    { q:'Can I get a crib in the room?', n:4, last:'last asked a week ago' },
+    { q:'What time does the spa close on Sundays?', n:3, last:'last asked a week ago' }
+  ];
+  var arts = load('knowledge2', SEED);
+  var gaps = load('gaps', GAPS);
+  var q = '', cat = 'Everything';
+
+  function cats(){
+    var seen = {};
+    arts.forEach(function(a){ seen[a.cat] = (seen[a.cat] || 0) + 1; });
+    return seen;
+  }
+  function shown(){
+    var needle = q.toLowerCase();
+    return arts.filter(function(a){
+      if(cat !== 'Everything' && a.cat !== cat) return false;
+      if(!needle) return true;
+      return (a.title + ' ' + a.body + ' ' + a.cat).toLowerCase().indexOf(needle) !== -1;
+    });
+  }
+  function typeClass(t){ return t === 'PDF' ? 'pdf' : (t === 'Article' ? '' : 'doc'); }
+
+  function render(){
+    var counts = cats();
+    var names = Object.keys(counts).sort();
+    document.getElementById('rail').innerHTML =
+      ['Everything'].concat(names).map(function(c){
+        var n = c === 'Everything' ? arts.length : counts[c];
+        return '<button data-cat="' + esc(c) + '" class="' + (c === cat ? 'on' : '') + '">' +
+          esc(c) + '<span class="c">' + n + '</span></button>';
+      }).join('');
+
+    var rows = shown();
+    document.getElementById('kBody').innerHTML = rows.map(function(a){
+      return '<tr class="kbrow" data-id="' + a.id + '">' +
+        '<td><span class="t">' + esc(a.title) + '</span><span class="s">' + esc(a.body.slice(0,64)) +
+          (a.body.length > 64 ? '&hellip;' : '') + '</span></td>' +
+        '<td><span class="src ' + typeClass(a.type) + '">' + esc(a.type) + '</span></td>' +
+        '<td><span class="tag' + (a.voice ? '' : ' off') + '">' + (a.voice ? 'Yes' : 'Staff only') + '</span></td>' +
+        '<td class="kbact"><button class="linkbtn" data-voice="' + a.id + '">' +
+          (a.voice ? 'Make staff-only' : 'Allow voice') + '</button> ' +
+          '<button class="linkbtn danger" data-del="' + a.id + '">Delete</button></td></tr>';
+    }).join('');
+    document.getElementById('kEmpty').style.display = rows.length ? 'none' : 'flex';
+
+    document.getElementById('gaps').innerHTML = gaps.length ? gaps.map(function(g, i){
+      return '<div class="gap"><div class="q">' + esc(g.q) + '</div>' +
+        '<div class="m"><b>asked ' + g.n + ' times</b><span>' + esc(g.last) + '</span></div>' +
+        '<div class="act"><button class="linkbtn" data-gap="' + i + '">Write an answer</button></div></div>';
+    }).join('') : '<p class="dmuted">Nothing unanswered right now.</p>';
+
+    document.getElementById('kTotal').textContent = arts.length;
+    document.getElementById('kVoice').textContent = arts.filter(function(a){ return a.voice; }).length;
+    document.getElementById('kGaps').textContent = gaps.length;
+  }
+
+  document.getElementById('rail').addEventListener('click', function(e){
+    var b = e.target.closest('[data-cat]'); if(!b) return;
+    cat = b.getAttribute('data-cat'); render();
+  });
+  document.getElementById('kSearch').oninput = function(){ q = this.value; render(); };
+
+  // --- drag and drop -------------------------------------------------------
+  // A dropzone that only looks droppable is the dead-control problem again, so this takes a real
+  // drop: the file's name, type and size are read in the browser and listed as a source. Nothing
+  // is uploaded or parsed — there is no server side to this page.
+  var drop = document.getElementById('drop'), fileInput = document.getElementById('file');
+  function addFiles(list){
+    var added = 0;
+    for(var i = 0; i < list.length; i++){
+      var f = list[i];
+      var ext = (f.name.split('.').pop() || '').toUpperCase();
+      var type = ext === 'PDF' ? 'PDF' : (ext === 'DOC' || ext === 'DOCX' ? 'DOCX' : 'File');
+      arts.unshift({ id:uid(), title:f.name, cat:(cat === 'Everything' ? 'Uploads' : cat),
+        voice:true, type:type,
+        body:'Uploaded just now. ' + Math.max(1, Math.round(f.size / 1024)) + ' KB.' });
+      added++;
+    }
+    if(added){ save('knowledge2', arts); render();
+      toast('Added', added + (added === 1 ? ' file' : ' files') + ' added as a source.'); }
+  }
+  ['dragenter','dragover'].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add('over'); });
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove('over'); });
+  });
+  drop.addEventListener('drop', function(e){
+    if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+  });
+  document.getElementById('pick').onclick = function(){ fileInput.click(); };
+  fileInput.onchange = function(){ if(this.files && this.files.length) addFiles(this.files); this.value = ''; };
+
+  // --- gaps, and the composer ---------------------------------------------
+  document.getElementById('gaps').addEventListener('click', function(e){
+    var g = e.target.closest('[data-gap]'); if(!g) return;
+    var gap = gaps[Number(g.getAttribute('data-gap'))];
+    document.getElementById('aTitle').value = gap.q;
+    document.getElementById('aBody').focus();
+    toast('Ready', 'Write the answer and it leaves the gap list.');
+  });
+  document.getElementById('aAdd').onclick = function(){
+    var title = document.getElementById('aTitle').value.trim();
+    var body  = document.getElementById('aBody').value.trim();
+    if(!title || !body){ toast('Not added', 'It needs a question and an answer.'); return; }
+    arts.unshift({ id:uid(), title:title, body:body, type:'Article',
+      cat:document.getElementById('aCat').value.trim() || 'General',
+      voice:document.getElementById('aVoice').checked });
+    // Answering a gap clears it, which is the whole point of showing them.
+    gaps = gaps.filter(function(g){ return g.q.toLowerCase() !== title.toLowerCase(); });
+    save('knowledge2', arts); save('gaps', gaps); render();
+    document.getElementById('aTitle').value = ''; document.getElementById('aBody').value = '';
+    document.getElementById('aCat').value = '';
+    toast('Added', title);
+  };
+  document.getElementById('kBody').addEventListener('click', function(e){
+    var v = e.target.closest('[data-voice]'), d = e.target.closest('[data-del]');
+    if(v){ var id = v.getAttribute('data-voice');
+      arts.forEach(function(a){ if(a.id === id) a.voice = !a.voice; });
+      save('knowledge2', arts); render(); toast('Updated', 'Changed what may be read out.'); return; }
+    if(d){ var did = d.getAttribute('data-del');
+      arts = arts.filter(function(a){ return a.id !== did; });
+      save('knowledge2', arts); render(); toast('Deleted', 'Source removed.'); }
+  });
+  render();
+  wireNav(HOTEL_ID, { page:'knowledge' });
+  loadProperty();
+
+</script>
+</body></html>

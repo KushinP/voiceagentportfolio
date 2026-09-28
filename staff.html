@@ -1,0 +1,1067 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Employee Management</title><style>
+  :root{
+    --brand-50:#ECF3FF; --brand-100:#DDE9FF; --brand-500:#465FFF; --brand-600:#3641F5;
+    --g-25:#FCFCFD; --g-50:#F9FAFB; --g-100:#F2F4F7; --g-200:#E4E7EC; --g-300:#D0D5DD;
+    --g-400:#98A2B3; --g-500:#667085; --g-600:#475467; --g-700:#344054; --g-800:#1D2939; --g-900:#101828;
+    --link:#1100D8; --link-hover:#0e00b8; --success-500:#12B76A; --success-50:#ECFDF3;
+    --error-500:#F04438; --error-50:#FEF3F2; --danger:#EF4444; --purple:#5b0678;
+    --blue-600:#2563EB; --blue-700:#1D4ED8; --blue-50:#EFF6FF; --blue-500:#3B82F6;
+    --yellow-100:#FEF9C3; --yellow-200:#FEF08A; --yellow-500:#EAB308; --yellow-800:#854D0E;
+    --sidebar:290px; --sidebar-collapsed:90px; --header:70px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:'Outfit',sans-serif;font-size:16px;background:#fff;color:var(--g-900);-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit}
+  svg{display:block}
+
+  /* ---- sidebar (AppSidebar.tsx) ---- */
+  .sidebar{position:fixed;left:0;top:0;height:100vh;width:var(--sidebar);background:#fff;
+           border-right:1px solid var(--g-200);padding:0 20px;z-index:50;display:flex;flex-direction:column;
+           transition:width .3s ease-in-out}
+  .brand{padding:24px 0;display:flex;justify-content:center;cursor:pointer}
+  .brand img{width:75%;height:auto}
+  .brand .hname{font-size:17px;font-weight:600;color:var(--g-900);text-align:center;line-height:1.25}
+  .navscroll{display:flex;flex-direction:column;flex-grow:1;overflow-y:auto;margin-top:16px;scrollbar-width:none}
+  .navscroll::-webkit-scrollbar{display:none}
+  .navsec{margin-bottom:16px;font-size:12px;line-height:20px;text-transform:uppercase;color:var(--g-400);display:flex}
+  nav{margin-bottom:24px}
+  nav>ul{display:flex;flex-direction:column;gap:16px;list-style:none;margin:0;padding:0}
+  .menu-item{position:relative;display:flex;align-items:center;width:100%;gap:12px;padding:8px 12px;
+             font-weight:500;border-radius:8px;font-size:14px;line-height:20px;cursor:pointer;
+             background:none;border:0;text-align:left;color:var(--g-700)}
+  .menu-item-active{background:var(--brand-50);color:var(--brand-500)}
+  .menu-item-inactive:hover{background:var(--g-100)}
+  .menu-item .ic{flex:none;display:block}
+  .menu-item .ic svg{width:24px!important;height:24px!important;color:var(--g-500)}
+  .menu-item-active .ic svg{color:var(--brand-500)}
+  .menu-item .label{flex:1}
+  .menu-item .caret{margin-left:auto;width:20px;height:20px;flex:none;transition:transform .2s}
+  .menu-item .caret svg{width:20px;height:20px}
+  .menu-item.open .caret{transform:rotate(180deg);color:var(--brand-500)}
+  .submenu{overflow:hidden;transition:height .3s;height:0}
+  .submenu>ul{margin:8px 0 0 36px;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+  .menu-dropdown-item{position:relative;display:flex;align-items:center;gap:12px;border-radius:8px;
+                      padding:10px 12px;font-size:14px;line-height:20px;font-weight:500;color:var(--g-700);cursor:pointer}
+  .menu-dropdown-item:hover{background:var(--g-100)}
+  .menu-dropdown-item.active{background:var(--brand-50);color:var(--brand-500)}
+  .count{display:none;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;
+         margin-left:auto;font-size:12px;font-weight:500;color:#fff;background:var(--danger);border-radius:9999px}
+  .count.show{display:inline-flex}
+  .poweredby{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 0}
+  .poweredby p{margin:0 0 8px;font-size:12px;color:var(--purple)}
+  .poweredby img{width:150px;height:40px;object-fit:contain}
+  .setuplink{display:block;margin-bottom:10px;font-size:12px;color:var(--g-500);text-decoration:underline}
+  .setuplink:hover{color:var(--brand-500)}
+  .setuplink.on{color:var(--brand-500);font-weight:600}
+
+  /* collapsed (hamburger) */
+  body.nav-collapsed .sidebar{width:var(--sidebar-collapsed)}
+  body.nav-collapsed .sidebar .label,
+  body.nav-collapsed .sidebar .caret,
+  body.nav-collapsed .sidebar .count,
+  body.nav-collapsed .submenu,
+  body.nav-collapsed .poweredby,
+  body.nav-collapsed .navsec span{display:none}
+  body.nav-collapsed .menu-item{justify-content:center}
+  body.nav-collapsed .main{margin-left:var(--sidebar-collapsed)}
+
+  /* ---- header (AppHeader.tsx) ---- */
+  .main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column;transition:margin-left .3s}
+  .topbar{position:sticky;top:0;z-index:40;background:#fff;border-bottom:1px solid var(--g-200);display:flex;width:100%}
+  .topbar .inner{display:flex;align-items:center;justify-content:space-between;flex-grow:1;padding:12px;height:var(--header)}
+  .topbar h1{font-size:20px;font-weight:600;color:var(--g-800);margin:0}
+  .topbar .left{display:flex;align-items:center;gap:16px}
+  .topbar .right{display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-left:auto}
+  .hamburger{display:flex;align-items:center;justify-content:center;width:44px;height:44px;color:var(--g-500);
+             border:1px solid var(--g-200);border-radius:8px;background:#fff;cursor:pointer}
+  .hamburger:hover{background:var(--g-50)}
+  .bell{position:relative;display:flex;align-items:center;justify-content:center;height:44px;width:44px;
+        color:var(--g-500);border:1px solid var(--g-200);border-radius:9999px;background:#fff;cursor:pointer}
+  .bell:hover{background:var(--g-100)}
+  .bell svg{width:20px;height:20px}
+  .bell .dot{position:absolute;right:-5px;top:-5px;height:20px;width:20px;border-radius:9999px;
+             border:1px solid #fff;background:var(--g-400)}
+  .avatar{width:40px;height:40px;border-radius:9999px;overflow:hidden;background:#fff;border:0;padding:0;cursor:pointer}
+  .avatar svg{width:40px;height:40px;border-radius:9999px}
+  @media (min-width:1024px){ .topbar .inner{padding:16px 24px} }
+
+  /* ---- page ---- */
+  .content{padding:16px;max-width:1536px;width:100%;margin:0 auto}
+  @media (min-width:768px){ .content{padding:24px} }
+  .page{display:flex;flex-direction:column;padding:24px;height:100%}
+  .pagehead{margin-bottom:24px}
+  .pagehead h2{font-size:24px;font-weight:600;color:var(--g-800);margin:0 0 8px}
+  .pagehead p{font-size:14px;color:var(--g-500);margin:0}
+  .scopewarn{margin:0 0 16px;border:1px solid #FEC84B;background:#FFFAEB;color:#93370D;
+             border-radius:12px;padding:12px 16px;font-size:13px}
+  .placeholder{display:flex;align-items:center;justify-content:center;height:320px;color:var(--g-500);font-size:14px;
+               border:1px dashed var(--g-300);border-radius:12px;text-align:center;padding:24px}
+
+  /* ---- tabs (RequestsTab.tsx) ---- */
+  .tabs{width:100%;border-bottom:4px solid var(--g-200);display:flex;align-items:center;gap:6px;margin-bottom:16px}
+  .tab{padding:8px 12px;height:36px;font-size:14px;font-weight:300;color:var(--g-900);background:none;border:0;cursor:pointer;white-space:nowrap}
+  .tab:hover{color:var(--g-900)}
+  .tab.active{font-weight:700;border-bottom:3px solid var(--g-900);margin-bottom:-2px;padding-top:.5px;padding-bottom:.5px}
+
+  /* ---- toolbar (RequestsToolbar.tsx + SearchBar.tsx) ---- */
+  .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px}
+  .tbleft{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:260px}
+  .tbright{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:0 0 auto}
+  .iconbtn{padding:8px;border-radius:6px;border:1px solid var(--g-200);background:#fff;cursor:pointer;
+           display:inline-flex;align-items:center;justify-content:center;color:var(--g-600)}
+  .iconbtn:hover{background:var(--g-100)}
+  .iconbtn svg{width:20px;height:20px}
+  .searchwrap{display:flex;align-items:center;width:100%;flex:1}
+  .searchrel{position:relative;flex-grow:1}
+  .searchrel input{width:100%;padding:8px 48px 8px 12px;border:1px solid var(--g-300);border-radius:4px;
+                   background:var(--g-50);color:var(--g-800);font:inherit;font-size:14px;outline:none}
+  .searchrel input:focus{box-shadow:0 0 0 2px var(--blue-500)}
+  .clearx{position:absolute;right:12px;top:10px;background:none;border:0;color:var(--g-400);cursor:pointer;padding:0}
+  .clearx:hover{color:var(--g-600)}
+  .clearx svg{width:20px;height:20px}
+  .searchgo{margin-left:8px;background:var(--blue-600);color:#fff;padding:8px;border-radius:4px;border:0;cursor:pointer;
+            display:inline-flex;align-items:center;justify-content:center}
+  .searchgo:hover{background:var(--blue-700)}
+  .searchgo svg{width:20px;height:20px}
+  .chip{background:#fff;border:1px solid var(--g-100);border-radius:8px}
+  .chip button{color:var(--g-900);background:none;border:0;cursor:pointer;padding:0}
+  .chip .in{display:flex;align-items:center;gap:8px;margin:0 8px;font-weight:300;font-size:14px;padding:8px}
+  .chip .in svg{width:20px;height:20px}
+  .sel{position:relative;display:inline-block;width:224px}
+  .sel>button{display:flex;width:100%;align-items:center;justify-content:space-between;padding:8px 16px;
+              font-size:14px;color:var(--g-900);background:#fff;border:1px solid var(--g-200);border-radius:6px;cursor:pointer}
+  .sel>button:hover{background:var(--g-100)}
+  .sel>button>span:first-child{padding:0 16px}
+  .sel>button svg{width:16px;height:16px}
+  .menu{position:absolute;z-index:60;left:0;top:calc(100% + 8px);min-width:100%;background:#fff;
+        border:1px solid var(--g-200);border-radius:12px;
+        box-shadow:0 12px 16px -4px rgba(16,24,40,.08),0 4px 6px -2px rgba(16,24,40,.03);padding:8px;display:none}
+  .menu.open{display:block}
+  .menu button{display:block;width:100%;text-align:left;padding:8px 16px;font-size:14px;border:0;background:none;
+               border-radius:6px;cursor:pointer;color:var(--g-700)}
+  .menu button:hover{background:var(--g-100);color:var(--g-900)}
+  /* The in-row status dropdown. Fixed minimum so the button does not resize as the label
+     changes between "Submitted" and "In Progress". */
+  .rowstatus{width:auto;min-width:120px}
+  .rowstatus>button{padding:6px 10px}
+  .rowstatus>button>span:first-child{padding:0}
+  /* Fixed, not absolute. .tablewrap declares overflow-x:auto, which silently computes overflow-y
+     from visible to auto, making it a scroll box on both axes — an absolutely-positioned menu is
+     then clipped to the table and adds a scrollbar instead of floating over the page. Fixed
+     positioning escapes that; JS sets left/top from the trigger's rect. */
+  .rowstatus .menu{position:fixed;min-width:150px;left:0;top:0}
+  .starbtn{display:flex;align-items:center;justify-content:center;padding:8px 16px;font-size:14px;border-radius:6px;
+           border:1px solid var(--g-200);background:#fff;color:var(--g-900);cursor:pointer}
+  .starbtn svg{width:20px;height:20px}
+  .starbtn.on{background:var(--yellow-100);color:var(--yellow-800);border-color:var(--yellow-200)}
+
+  /* ---- table (GeneralReqs.tsx) ---- */
+  .tablewrap{flex:1;overflow-x:auto;overflow-y:visible}
+  table{min-width:100%;width:100%;border-collapse:collapse}
+  thead{border-bottom:3px solid var(--g-200)}
+  thead th,thead td{font-weight:300;font-size:.875rem;color:var(--g-900);text-align:start;white-space:nowrap;padding:12px 4px 12px 8px}
+  thead td.star{width:48px;padding:12px 8px}
+  th.c-guest{width:192px;padding:12px 4px 12px 8px}
+  th.c-room{width:128px;padding:12px 4px 12px 4px}
+  th.c-status{padding:12px 8px 12px 4px}
+  th.c-time{padding:12px 16px 12px 8px}
+  th.c-last{width:160px;padding:12px 8px}
+  tbody tr{border-top:1px solid var(--g-200);cursor:pointer}
+  tbody tr:first-child{border-top:0}
+  tbody tr:hover{background:var(--g-50)}
+  tbody tr.done{background:var(--g-50)}
+  /* Deliberately NOT the .sel class: that one is the dropdown wrapper, and its
+     display:inline-block / width:224px were landing on the <tr> too, collapsing the row. */
+  tbody tr.rowsel{background:var(--blue-50);box-shadow:inset 4px 0 0 0 var(--blue-500)}
+  tbody td{font-size:.875rem;font-weight:300;color:var(--link);vertical-align:middle;white-space:nowrap;padding:12px 4px 12px 8px}
+  tbody td.star{width:48px;padding:12px 8px}
+  tbody td.c-status{min-width:120px;padding:12px 8px 12px 4px}
+  tbody td.c-time{padding:12px 16px 12px 8px}
+  .starcell{background:none;border:0;cursor:pointer;padding:0;color:var(--g-500);display:inline-flex}
+  .starcell svg{width:20px;height:20px}
+  .starcell.on{color:var(--yellow-500)}
+  .statusbtn{display:inline-flex;align-items:center;border:1px solid var(--g-300);border-radius:4px;
+             padding:4px 8px;font-size:14px;background:var(--g-50);color:var(--g-900);cursor:pointer}
+  .statusbtn:hover{background:var(--g-100)}
+  .statusbtn>span{margin-right:8px;white-space:nowrap}
+  .statusbtn svg{width:16px;height:16px}
+  .empty{display:flex;align-items:center;justify-content:center;height:256px;color:var(--g-500);font-size:14px}
+
+  /* ---- pagination ---- */
+  .pager{margin-top:16px;display:flex;align-items:center;justify-content:space-between}
+  .pager .grp{display:flex;align-items:center;gap:8px}
+  .pager span{font-size:14px;color:var(--g-600)}
+  .pager select{border:1px solid var(--g-300);border-radius:4px;padding:4px 32px 4px 12px;font:inherit;font-size:14px;background:#fff}
+  .pager button{padding:4px 12px;border:1px solid var(--g-300);border-radius:4px;background:#fff;cursor:pointer;font:inherit;font-size:14px}
+  .pager button:disabled{opacity:.5;cursor:default}
+  .pager button:not(:disabled):hover{background:var(--g-50)}
+
+  /* ---- drawer ---- */
+  /* Starts below the header (z-index 40) rather than over it, so the hamburger stays clickable
+     while a drawer is open. */
+  .backdrop{position:fixed;inset:var(--header) 0 0 0;z-index:39;display:none}
+  .backdrop.open{display:block}
+  .drawer{position:fixed;right:0;top:var(--header);width:30%;min-width:380px;height:calc(100vh - var(--header));
+          background:#fff;z-index:50;padding:20px;overflow-y:auto;transform:translateX(100%);
+          transition:transform .3s ease-in-out;box-shadow:0 0 15px rgba(0,0,0,.1)}
+  .drawer.open{transform:translateX(0)}
+  .dnav{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .dnav .grp{display:flex;align-items:center;gap:8px}
+  /* Room-service order lines, at the prices quoted. */
+  .otable{width:100%;border-collapse:collapse;font-size:13px}
+  .otable th{text-align:left;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--g-500);
+             font-weight:500;padding:0 0 6px;border-bottom:1px solid var(--g-200)}
+  .otable td{padding:8px 0;border-bottom:1px solid var(--g-100);vertical-align:top;color:var(--g-800)}
+  .otable .oqty{width:52px;text-align:center}
+  .otable .oamt{width:88px;text-align:right;font-variant-numeric:tabular-nums}
+  .otable .ototal td{font-weight:600;border-bottom:0;padding-top:10px}
+  .oinstr{display:block;font-size:12px;color:var(--g-500);margin-top:2px}
+  /* Dispatch trail — who was told, on what channel, and whether it worked. */
+  .drow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--g-100)}
+  /* Outbound to the guest, as opposed to inbound to a department. Tinted so the two
+     directions of the trail are distinguishable at a glance. */
+  .drow.toguest{background:#F9FAFB;margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:6px}
+  .drow:last-child{border-bottom:0}
+  .dchip{font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 8px;border-radius:6px;white-space:nowrap}
+  .dchip.ok{background:#ECFDF3;color:#067647;border:1px solid #ABEFC6}
+  .dchip.sim{background:#F2F4F7;color:#475467;border:1px solid #E4E7EC}
+  .dchip.bad{background:#FEF3F2;color:#B42318;border:1px solid #FECDCA}
+  .dwho{font-size:13px;color:var(--g-800)}
+  .dwhen{font-size:12px;color:var(--g-500);margin-left:auto}
+  .daddr{flex-basis:100%;font-size:12px;color:var(--g-500)}
+  .dmuted{font-size:13px;color:var(--g-500);margin:6px 0}
+  /* How a request arrived. Voice is the one worth noticing. */
+  .chan{font-size:10px;font-weight:700;letter-spacing:.05em;padding:2px 6px;border-radius:5px;margin-left:6px;vertical-align:middle}
+  .chan.voice{background:#EEF4FF;color:#3538CD;border:1px solid #C7D7FE}
+  .chan.text{background:#F4F3FF;color:#5925DC;border:1px solid #D9D6FE}
+  .chan.unver{background:#FFFAEB;color:#B54708;border:1px solid #FEDF89}
+  .hotelswitch{display:flex;align-items:center;gap:8px;margin-right:12px;font-size:13px;color:var(--g-500)}
+  .hotelswitch select{font:inherit;color:var(--g-800);padding:6px 10px;border:1px solid var(--g-300);
+    border-radius:8px;background:#fff;max-width:220px}
+  .chan.notified{background:#ECFDF3;color:#067647;border:1px solid #ABEFC6}
+  /* Amber, not green: the request is legitimate but the caller was not the named guest. */
+  .chan.companion{background:#FFFAEB;color:#B54708;border:1px solid #FEDF89}
+  .pill{border:0;background:none;border-radius:9999px;padding:8px;cursor:pointer;color:var(--g-900);display:inline-flex}
+  .pill:hover{background:var(--g-100)}
+  .pill:disabled{opacity:.5;cursor:not-allowed}
+  .pill svg{width:20px;height:20px}
+  .pill.rot svg{transform:rotate(180deg)}
+  .dstar{display:flex;align-items:center;gap:20px;margin-bottom:16px}
+  .dstar p{margin:0;font-weight:300;color:var(--g-500);font-style:italic}
+  .dstatus{display:flex;align-items:center;margin-bottom:16px}
+  .dstatus>p{margin:0 8px 0 0;font-weight:500;color:var(--g-900)}
+  .dnote{font-size:12px;color:var(--g-500);margin:0 0 8px}
+  .drawer h3{font-size:18px;font-weight:600;color:var(--g-900);margin:0 0 8px;border-bottom:1px solid var(--g-200);padding-bottom:4px}
+  .drawer h3.noline{border-bottom:0;padding-bottom:0;margin-bottom:16px}
+  .dsec{margin-bottom:16px}
+  .desc{background:var(--g-50);border:1px solid var(--g-200);border-radius:8px;padding:16px}
+  .desc p{margin:0;font-weight:300;color:var(--g-900);font-size:16px;line-height:1.625;word-break:break-word}
+  .kv{display:flex;align-items:flex-start;font-size:14px;margin-bottom:12px}
+  .kv .k{width:112px;flex:none;font-weight:500;color:var(--g-700);margin:0}
+  .kv .v{font-weight:300;color:var(--g-900);word-break:break-word;margin:0}
+  .msgbox{border:1px solid var(--g-300);border-radius:8px;overflow:hidden}
+  .msgbox input{width:100%;padding:8px 12px;background:#fff;color:var(--g-900);border:0;
+                border-bottom:1px solid var(--g-300);font:inherit;font-size:14px;outline:none}
+  .msgtype{padding:8px 12px;border-bottom:1px solid var(--g-300)}
+  .msgtype label{display:block;font-size:12px;font-weight:500;color:var(--g-500);margin-bottom:4px}
+  .msgtype select{width:100%;background:#fff;color:var(--g-900);font:inherit;font-size:14px;border-radius:6px;
+                  padding:4px;border:1px solid var(--g-300);outline:none}
+  .msgbox textarea{width:100%;padding:8px 12px 0;background:#fff;color:var(--g-900);border:0;
+                   font:inherit;font-size:14px;outline:none;resize:vertical;min-height:74px}
+  .msgbtns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  .msgbtns button{width:100%;padding:8px 16px;font-size:14px;font-weight:500;border-radius:6px;cursor:pointer}
+  .btn-ghost{color:var(--g-700);background:var(--g-100);border:1px solid var(--g-300)}
+  .btn-ghost:hover{background:var(--g-200)}
+  .btn-send{color:#fff;background:var(--link);border:0}
+  .btn-send:hover{background:var(--link-hover)}
+  .btn-send:disabled{opacity:.5;cursor:not-allowed}
+
+  /* ---- alert / toast (Alert.tsx) ---- */
+  .alert{border-radius:12px;border:1px solid var(--success-500);background:var(--success-50);padding:16px;
+         display:flex;align-items:flex-start;gap:12px}
+  .alert .ai{margin-top:-2px;color:var(--success-500);flex:none}
+  .alert h4{margin:0 0 4px;font-size:14px;font-weight:600;color:var(--g-800)}
+  .alert p{margin:0;font-size:14px;color:var(--g-500)}
+  .toast{position:fixed;bottom:16px;right:16px;z-index:50;display:none}
+  .toast.show{display:block}
+  .sel.picked > button{border-color:var(--brand-300,#B2CCFF);background:var(--brand-50,#F5F8FF);color:var(--g-800);font-weight:500}
+  .inlinealert{margin-top:12px;display:none}
+  .inlinealert.show{display:block}
+  /* Failure variant of the same alert/toast markup. Every write used to swallow its errors, so a
+     rejected request looked identical to a dead button — which is exactly how the status dropdown
+     hid for two rounds of "it doesn't work". */
+  .alert.bad{border-color:var(--error-500,#F04438);background:var(--error-50,#FEF3F2)}
+  .alert.bad .ai{color:var(--error-500,#F04438)}
+
+  /* ---- ground-truth page ---- */
+  .gt h3{font-size:16px;font-weight:600;color:var(--g-800);margin:28px 0 10px;border-bottom:0;padding-bottom:0}
+  .gt table{border:1px solid var(--g-200);border-radius:8px;overflow:hidden}
+  .gt tbody td{color:var(--g-700)}
+  .gt tbody tr{cursor:default}
+  .gt tr.here td{background:var(--success-50)}
+
+  /* ---- control panel ---- */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px}
+  .card{border:1px solid var(--g-200);border-radius:16px;background:#fff}
+  .card>h3{margin:0;padding:20px 24px;font-size:16px;font-weight:600;color:var(--g-800);border-bottom:0}
+  .card>h3 small{display:block;margin-top:4px;font-size:13px;font-weight:400;color:var(--g-500)}
+  .card>.body{padding:20px 24px;border-top:1px solid var(--g-100)}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:500;color:var(--g-700);margin-bottom:6px}
+  .field input,.field select,.field textarea{width:100%;padding:9px 12px;border:1px solid var(--g-300);border-radius:8px;
+    font:inherit;font-size:14px;color:var(--g-800);background:#fff;outline:none}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--brand-500);box-shadow:0 0 0 4px rgba(70,95,255,.12)}
+  .field textarea{min-height:120px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:8px;
+       border:0;background:var(--brand-500);color:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+  .btn:hover{background:var(--brand-600)}
+  .btn:disabled{background:#9CB9FF;cursor:default}
+  .btn.ghost{background:#fff;color:var(--g-700);border:1px solid var(--g-300)}
+  .btn.ghost:hover{background:var(--g-50)}
+  .btn.danger{background:#fff;color:#B42318;border:1px solid #FDA29B}
+  .btn.danger:hover{background:var(--error-50)}
+  .result{margin-top:14px;border-radius:8px;padding:12px 14px;font-size:13px;display:none}
+  .result.ok{display:block;background:var(--success-50);border:1px solid var(--success-500);color:#054F31}
+  .result.err{display:block;background:var(--error-50);border:1px solid var(--error-500);color:#912018}
+  .statgrid{display:grid;grid-template-columns:1fr;gap:10px}
+  .stat{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:8px 0;border-bottom:1px solid var(--g-100)}
+  .stat .l{color:var(--g-500)}
+  .stat .v{color:var(--g-900);font-weight:500;text-align:right;word-break:break-word}
+  .hint{font-size:12px;color:var(--g-500);margin-top:8px;line-height:1.5}
+  code{background:var(--g-100);border-radius:4px;padding:1px 5px;font-size:12px}
+
+  @media (max-width:1024px){ .sidebar{display:none} .main{margin-left:0} .drawer{width:100%;min-width:0} }
+
+  .slayout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
+  @media (max-width:1200px){ .slayout{grid-template-columns:1fr} }
+  .dept{border:1px solid var(--g-200);border-radius:12px;background:#fff;margin-bottom:12px}
+  .dept .dh{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--g-100)}
+  .dept .dh .nm{font-size:14px;font-weight:600;color:var(--g-900)}
+  .dept .dh .cnt{font-size:12px;color:var(--g-500);margin-left:auto}
+  .dept.gap{border-color:#FEDF89;background:#FFFCF5}
+  .dept.gap .dh{border-bottom-color:#FEDF89}
+  .person{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--g-100)}
+  .person:last-child{border-bottom:0}
+  .person .who{min-width:150px;flex:1}
+  .person .n{font-size:14px;color:var(--g-900)}
+  .person .n .duty{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    background:#ECFDF3;color:#067647;border:1px solid #ABEFC6;border-radius:5px;padding:1px 6px;
+    margin-left:7px;white-space:nowrap;display:inline-block}
+  .person .n{display:flex;align-items:center;gap:0;flex-wrap:wrap}
+  .person .c{font-size:12px;color:var(--g-500);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .person .ph{flex:none;display:flex;align-items:center;gap:6px}
+  .person .ph input{width:132px;padding:6px 9px;border:1px solid var(--g-300);border-radius:7px;
+    font:inherit;font-size:12px}
+  .person .ph input:focus{border-color:var(--brand-500);outline:none;box-shadow:0 0 0 3px rgba(70,95,255,.12)}
+  .person .ph button{background:none;border:0;font:inherit;font-size:12px;color:#3538CD;cursor:pointer;padding:4px}
+  .warn{font-size:13px;color:#B54708;padding:11px 16px}
+  /* the sample-data control, matching Analytics */
+  .modebar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .seg{display:inline-flex;border:1px solid var(--g-200);border-radius:9px;overflow:hidden;background:#fff}
+  .seg button{font:inherit;font-size:13px;padding:6px 14px;border:0;background:#fff;color:var(--g-600,#475467);cursor:pointer}
+  .seg button+button{border-left:1px solid var(--g-200)}
+  .seg button.on{background:#EEF4FF;color:#3538CD;font-weight:600}
+  .modenote{font-size:12px;color:var(--g-500)}
+  .sample{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    background:#FFFAEB;color:#B54708;border:1px solid #FEDF89;border-radius:5px;padding:1px 6px}
+  .dh .sample{margin-left:8px}
+  /* the escalation chain — tier pills joined by wait connectors */
+  .chain{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:12px 16px;
+    border-bottom:1px solid var(--g-100);background:var(--g-50,#F9FAFB)}
+  .chain .clabel{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--g-500);margin-right:4px;flex:none}
+  .tier{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--g-200);background:#fff;
+    border-radius:20px;padding:4px 11px 4px 5px;font-size:12px;color:var(--g-700,#344054)}
+  .tier b{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+    border-radius:50%;background:var(--g-100);color:var(--g-600,#475467);font-size:10px;font-weight:700;flex:none}
+  .tier .ch{color:var(--g-500);font-size:11px}
+  .tier.now{border-color:#ABEFC6;background:#F6FEF9}
+  .tier.now b{background:#12B76A;color:#fff}
+  .tier.soon{border-style:dashed}
+  .tier.soon b{background:var(--g-200)}
+  .tier.away{opacity:.55}
+  .wait{font-size:11px;color:var(--g-400,#98A2B3);white-space:nowrap}
+  .chainnote{font-size:12px;color:var(--g-500);padding:0 16px 12px;line-height:1.5;background:var(--g-50,#F9FAFB);
+    border-bottom:1px solid var(--g-100)}
+  /* roster columns */
+  .person .contact{flex:none;width:172px;min-width:0}
+  .person .contact .em{font-size:12px;color:var(--g-600,#475467);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .person .contact .no{font-size:12px;color:#B54708}
+  .person select{flex:none;width:100px;font:inherit;font-size:12px;padding:5px 8px;border:1px solid var(--g-300);
+    border-radius:7px;background:#fff;color:var(--g-700,#344054)}
+  .person select.absent{border-color:#FEDF89;background:#FFFAEB;color:#B54708}
+  .person.away .n{color:var(--g-500)}
+  .cols{display:flex;align-items:center;gap:12px;padding:7px 16px;border-bottom:1px solid var(--g-100);
+    font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--g-400,#98A2B3)}
+  .cols{gap:10px}
+  .cols .c1{flex:1;min-width:150px}.cols .c2{width:172px;flex:none}
+  .cols .c3{width:132px;flex:none}.cols .c4{width:100px;flex:none}
+  .cols .c5{width:28px;flex:none}
+  .person .edit{width:100%;padding:5px 8px;border:1px solid var(--g-200);border-radius:7px;
+    font:inherit;font-size:12px;background:#fff;color:var(--g-800,#1D2939)}
+  .person .edit::placeholder{color:var(--g-400,#98A2B3)}
+  .person .edit:focus{border-color:#3538CD;outline:none;box-shadow:0 0 0 3px rgba(70,95,255,.12)}
+  .person .nameedit{font-size:13px}
+  .person .rm{flex:none;width:24px;height:24px;border:1px solid var(--g-200);border-radius:6px;
+    background:#fff;color:var(--g-400,#98A2B3);font-size:15px;line-height:1;cursor:pointer;padding:0}
+  .person .rm:hover{border-color:#FDA29B;color:#B42318;background:#FFFBFA}
+  .addrow{display:flex;align-items:center;gap:10px;padding:9px 16px;border-top:1px dashed var(--g-200)}
+  .addrow button{font:inherit;font-size:12px;padding:5px 11px;border:1px dashed var(--g-300);
+    border-radius:7px;background:#fff;color:var(--g-600,#475467);cursor:pointer}
+  .addrow button:hover{border-color:#3538CD;color:#3538CD}
+  .addrow .cap{font-size:11px;color:var(--g-400,#98A2B3);margin-left:auto}
+  .resetrow{margin-left:auto;font:inherit;font-size:12px;padding:5px 10px;border:1px solid var(--g-200);
+    border-radius:8px;background:#fff;color:var(--g-600,#475467);cursor:pointer}
+  .resetrow:hover{border-color:#3538CD;color:#3538CD}
+  .route{font-size:13px;color:var(--g-700,#344054);line-height:1.65}
+  .route code{background:var(--g-100);border-radius:4px;padding:1px 5px;font-size:12px}
+  .chan{font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;white-space:nowrap;
+    background:var(--g-100);color:var(--g-600,#475467);border:1px solid var(--g-200)}
+  .chan.sent{background:#ECFDF3;color:#067647;border-color:#ABEFC6}
+  .chan.simulated{background:#EEF4FF;color:#3538CD;border-color:#C7D7FE}
+  .chan.failed{background:#FEF3F2;color:#B42318;border-color:#FECDCA}
+  .chan.skipped{background:#FFFAEB;color:#B54708;border-color:#FEDF89}
+  .dlv{padding:10px 0;border-bottom:1px solid var(--g-100);font-size:13px}
+  .dlv:last-child{border-bottom:0}
+  .dlv .top{display:flex;gap:8px;align-items:center}
+  .dlv .who{color:var(--g-800);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dlv .m{font-size:12px;color:var(--g-500);margin-top:3px}
+  .snone{color:var(--g-500);font-size:13px;margin:0;padding:2px 0}
+  .banner{border:1px solid #FEDF89;background:#FFFCF5;border-radius:10px;padding:11px 14px;
+    font-size:13px;color:#B54708;margin-bottom:16px;line-height:1.55}
+  .banner.live{border-color:#ABEFC6;background:#F6FEF9;color:#067647}
+</style>  <link rel="stylesheet" href="assets/fonts.css">
+  <script src="assets/snapshot.js"></script>
+  <script src="assets/offline.js"></script>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <a class="brand" href="index.html" id="brandLink">
+      <img id="hotelLogo" alt="Hotel Logo" style="display:none" />
+      <span class="hname" id="hotelName">&nbsp;</span>
+    </a>
+    <div class="navscroll">
+      <nav>
+        <div class="navsec"><span>Navigation</span></div>
+        <ul>
+          <li>
+            <button class="menu-item menu-item-inactive" data-submenu="requests">
+              <span class="ic"><svg width="18" height="13" viewBox="0 0 18 13" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 0.5C9.47739 0.5 9.93523 0.680612 10.2728 1.0021C10.6104 1.32359 10.8 1.75963 10.8 2.21429C10.8 2.42 10.764 2.61714 10.692 2.80571C14.355 3.5 17.1 6.42286 17.1 9.92857H0.9C0.9 6.42286 3.645 3.5 7.308 2.80571C7.236 2.61714 7.2 2.42 7.2 2.21429C7.2 1.75963 7.38964 1.32359 7.72721 1.0021C8.06477 0.680612 8.52261 0.5 9 0.5ZM18 12.5H0V10.7857H18V12.5Z" fill="currentColor"/></svg></span><span class="label">Guest Requests</span>
+              <span class="caret"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <div class="submenu" data-for="requests">
+              <ul>
+                <li class="menu-dropdown-item" data-board="general"><span class="label">General</span><span class="count" id="c-general">0</span></li>
+                <li class="menu-dropdown-item" data-board="dining"><span class="label">In-Room Dining</span><span class="count" id="c-dining">0</span></li>
+                <li class="menu-dropdown-item" data-board="reservations"><span class="label">Reservations</span><span class="count" id="c-reservations">0</span></li>
+                <li class="menu-dropdown-item" data-nav="messages"><span class="label">Message History</span></li>
+              </ul>
+            </div>
+          </li>
+          <li>
+            <button class="menu-item menu-item-inactive" data-submenu="data">
+              <span class="ic"><svg width="20" height="11" viewBox="0 0 20 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 10.5V2.5H0V0.5H4V10.5H2ZM20 8.5C20 9.61 19.1 10.5 18 10.5H14V8.5H18V6.5H16V4.5H18V2.5H14V0.5H18C18.5304 0.5 19.0391 0.710714 19.4142 1.08579C19.7893 1.46086 20 1.96957 20 2.5V4C20 4.39782 19.842 4.77936 19.5607 5.06066C19.2794 5.34196 18.8978 5.5 18.5 5.5C18.8978 5.5 19.2794 5.65804 19.5607 5.93934C19.842 6.22064 20 6.60218 20 7V8.5ZM12 8.5V10.5H6V6.5C6 5.39 6.9 4.5 8 4.5H10V2.5H6V0.5H10C10.5304 0.5 11.0391 0.710714 11.4142 1.08579C11.7893 1.46086 12 1.96957 12 2.5V4.5C12 5.61 11.1 6.5 10 6.5H8V8.5H12Z" fill="currentColor"/></svg></span><span class="label">Data Management</span>
+              <span class="caret"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <div class="submenu" data-for="data">
+              <ul>
+                <li class="menu-dropdown-item" data-nav="data" data-section="property"><span class="label">Hotel Info</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="restaurants"><span class="label">Restaurants</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="menu"><span class="label">Menu Items</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="menu"><span class="label">Room Service</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="housekeeping"><span class="label">Housekeeping</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="facilities"><span class="label">Facilities</span></li>
+                <li class="menu-dropdown-item" data-nav="soon"><span class="label">Special Events</span></li>
+                <li class="menu-dropdown-item" data-nav="soon"><span class="label">Special Products</span></li>
+              </ul>
+            </div>
+          </li>
+          <li>
+            <button class="menu-item menu-item-inactive" data-submenu="ai">
+              <span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M10.5 2.25 12.28 7.22 17.25 9 12.28 10.78 10.5 15.75 8.72 10.78 3.75 9 8.72 7.22 10.5 2.25Z"/><path d="M17.75 13.5 18.68 16.32 21.5 17.25 18.68 18.18 17.75 21 16.82 18.18 14 17.25 16.82 16.32 17.75 13.5Z"/></svg></span><span class="label">AI Concierge</span>
+              <span class="caret"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <div class="submenu" data-for="ai">
+              <ul>
+                <li class="menu-dropdown-item" data-nav="page" data-page="journeys.html"><span class="label">Guest Journeys</span></li>
+                <li class="menu-dropdown-item" data-nav="page" data-page="knowledge.html"><span class="label">Knowledge Base</span></li>
+                <li class="menu-dropdown-item" data-nav="page" data-page="agent.html"><span class="label">Agent Settings</span></li>
+                <li class="menu-dropdown-item" data-nav="page" data-page="calls.html"><span class="label">Call Transcripts</span></li>
+                <li class="menu-dropdown-item" data-nav="page" data-page="chat.html"><span class="label">Text the Concierge</span></li>
+              </ul>
+            </div>
+          </li>
+          <li><a class="menu-item menu-item-inactive" data-nav="page" data-page="portfolio.html"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M3 21V6.75a1.5 1.5 0 0 1 1.06-1.43l6-1.85A1.5 1.5 0 0 1 12 4.9V21H3Zm2.6-11.4h2.2v2.1H5.6V9.6Zm0 4.2h2.2v2.1H5.6v-2.1ZM13.5 21V9.9l5.44 1.63A1.5 1.5 0 0 1 20 12.97V21h-6.5Zm2.1-6.3h2.2v2.1h-2.2v-2.1Z"/></svg></span><span class="label">Portfolio</span></a></li>
+          <li><a class="menu-item menu-item-inactive" data-nav="page" data-page="analytics.html"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="9" rx="1.5"/><rect x="9.75" y="7" width="4.5" height="14" rx="1.5"/><rect x="16.5" y="3" width="4.5" height="18" rx="1.5"/></svg></span><span class="label">Analytics</span></a></li>
+          <li><a class="menu-item menu-item-inactive menu-item-active" data-nav="page" data-page="staff.html"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z"/></svg></span><span class="label">Employee Management</span></a></li>
+          <li><a class="menu-item menu-item-inactive" data-nav="page" data-page="guests.html"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z"/><path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z"/></svg></span><span class="label">Guest Profiles</span></a></li>
+          <li><a class="menu-item menu-item-inactive" data-nav="soon"><span class="ic"><svg width="5" height="5" viewBox="0 0 10 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.66667 5.1C1.66667 4.165 2.41667 3.4 3.33333 3.4H10L13.3333 0H15V13.6H13.3333L10 10.2H3.33333C2.89131 10.2 2.46738 10.0209 2.15482 9.70208C1.84226 9.38327 1.66667 8.95087 1.66667 8.5H0V5.1H1.66667ZM8.33333 12.75V17H5.83333L4.44167 12.75H3.33333V11.05H10V12.75H8.33333Z" fill="currentColor"/></svg></span><span class="label">Announcements</span></a></li>
+          <li><a class="menu-item menu-item-inactive" data-nav="soon"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 0 0-.986.57c-.166.115-.334.126-.45.083L6.3 5.508a1.875 1.875 0 0 0-2.282.819l-.922 1.597a1.875 1.875 0 0 0 .432 2.385l.84.692c.095.078.17.229.154.43a7.598 7.598 0 0 0 0 1.139c.015.2-.059.352-.153.43l-.841.692a1.875 1.875 0 0 0-.432 2.385l.922 1.597a1.875 1.875 0 0 0 2.282.818l1.019-.382c.115-.043.283-.031.45.082.312.214.641.405.985.57.182.088.277.228.297.35l.178 1.071c.151.904.933 1.567 1.85 1.567h1.844c.916 0 1.699-.663 1.85-1.567l.178-1.072c.02-.12.114-.26.297-.349.344-.165.673-.356.985-.57.167-.114.335-.125.45-.082l1.02.382a1.875 1.875 0 0 0 2.28-.819l.923-1.597a1.875 1.875 0 0 0-.432-2.385l-.84-.692c-.095-.078-.17-.229-.154-.43a7.614 7.614 0 0 0 0-1.139c-.016-.2.059-.352.153-.43l.84-.692c.708-.582.891-1.59.433-2.385l-.922-1.597a1.875 1.875 0 0 0-2.282-.818l-1.02.382c-.114.043-.282.031-.449-.083a7.49 7.49 0 0 0-.985-.57c-.183-.087-.277-.227-.297-.348l-.179-1.072a1.875 1.875 0 0 0-1.85-1.567h-1.843ZM12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z"/></svg></span><span class="label">Settings</span></a></li>
+        </ul>
+      </nav>
+      <div class="poweredby">
+        <a class="setuplink" href="setup.html">Demo setup</a>
+        <p>Powered by</p>
+        <img src="assets/selfserve-logo.png" alt="Logo" width="150" height="40" />
+      </div>
+    </div>
+  </aside>
+<div class="main">
+
+  <header class="topbar"><div class="inner">
+    <div class="left">
+      <button class="hamburger" id="navToggle" aria-label="Toggle Sidebar"><svg width="16" height="12" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M0.583252 1C0.583252 0.585788 0.919038 0.25 1.33325 0.25H14.6666C15.0808 0.25 15.4166 0.585786 15.4166 1C15.4166 1.41421 15.0808 1.75 14.6666 1.75L1.33325 1.75C0.919038 1.75 0.583252 1.41422 0.583252 1ZM0.583252 11C0.583252 10.5858 0.919038 10.25 1.33325 10.25L7.99992 10.25C8.41413 10.25 8.74992 10.5858 8.74992 11C8.74992 11.4142 8.41413 11.75 7.99992 11.75L1.33325 11.75C0.919038 11.75 0.583252 11.4142 0.583252 11ZM1.33325 5.25C0.919038 5.25 0.583252 5.58579 0.583252 6C0.583252 6.41421 0.919038 6.75 1.33325 6.75L14.6666 6.75C15.0808 6.75 15.4166 6.41421 15.4166 6C15.4166 5.58579 15.0808 5.25 14.6666 5.25L1.33325 5.25Z" fill="currentColor"/></svg></button>
+      <h1>Management Dashboard</h1>
+    </div>
+    <div class="right">
+      <!-- Property switcher. The board and data pages scope to ?hotelId=, which previously could
+           only be set by typing a UUID into the URL — so a second property was effectively
+           invisible. Hidden until a page populates it (the setup page has its own pickers). -->
+      <label class="hotelswitch" id="hotelSwitchWrap" style="display:none">
+        <span>Property</span>
+        <select id="hotelSwitch" aria-label="Switch property"></select>
+      </label>
+      <button class="bell" aria-label="Push notifications"><span class="dot"></span><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.25 9a6.75 6.75 0 0 1 13.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 0 1-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 1 1-7.48 0 24.585 24.585 0 0 1-4.831-1.244.75.75 0 0 1-.298-1.205A8.217 8.217 0 0 0 5.25 9.75V9Zm4.502 8.9a2.25 2.25 0 1 0 4.496 0 25.057 25.057 0 0 1-4.496 0Z"/></svg></button>
+      <button class="avatar" aria-label="Open user menu"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" fill="#E4E7EC"/><circle cx="20" cy="15.5" r="6" fill="#98A2B3"/><path d="M8 34c0-6.075 5.373-11 12-11s12 4.925 12 11" fill="#98A2B3"/></svg></button>
+    </div>
+  </div></header>
+  <div class="content"><div class="page">
+    <div class="pagehead"><h2>Employee Management</h2>
+      <p>Who is in today, how to reach them, and the order a request passes through if nobody
+        picks it up.</p></div>
+    
+    <div class="modebar">
+      <div class="seg">
+        <button id="mLive" class="on">Live data</button>
+        <button id="mSample">Sample data</button>
+      </div>
+      <span class="modenote">Sample fills the page with an illustrative team you can edit &mdash;
+        useful on a property whose staff have not been loaded yet.</span>
+      <button class="resetrow" id="mReset" style="display:none">Reset sample team</button>
+    </div>
+
+    <div class="banner" id="sampleBanner" style="display:none">
+      <b>Illustrative team.</b> Nobody here is real &mdash; every card is tagged
+      <span class="sample">sample</span>. Edit the names, emails, phones and rota to match the
+      property you are showing: it is all kept in this browser and never written to the database,
+      so invented staff can never be sent a real request. Switch to <b>Live data</b> for the
+      property&rsquo;s actual team.
+    </div>
+
+    <div class="banner" id="banner"></div>
+    <div class="banner" id="reach"></div>
+    <div class="slayout">
+      <div>
+        <div id="depts"></div>
+        <p class="hint" id="saveOut" style="color:#B42318"></p>
+      </div>
+      <aside>
+        <div class="card" style="margin-bottom:16px">
+          <h3>How a request gets to someone<small>The real path, not a diagram.</small></h3>
+          <div class="body route">
+            The concierge files a request with a category. That category is folded onto one of five
+            departments &mdash; <code>Housekeeping</code>, <code>Front&nbsp;Desk</code>,
+            <code>Food&nbsp;&amp;&nbsp;Beverage</code>, <code>Concierge</code>,
+            <code>Maintenance</code> &mdash; and anything unrecognised goes to Front Desk, so a
+            request is never left unrouted.<br><br>
+            Whoever is <b>in today</b> and first on the department list is assigned the request on
+            the record, then texted if they have a number and emailed if they have an address. Every
+            attempt is written down, including the ones that fail.<br><br>
+            Marking someone <b>Absent</b> is not cosmetic: the next request in that department goes
+            to the next person instead. It clears itself overnight.
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <h3>Sent to staff <span class="sample" id="dlvTag" style="display:none">sample</span><small>Who was told about a request, and whether it worked.</small></h3>
+          <div class="body"><div id="dlv"></div></div>
+        </div>
+        <div class="card">
+          <h3>Sent to the guest <span class="sample" id="dlvGuestTag" style="display:none">sample</span><small>Confirmations going the other way. <span id="dlvGuestCount"></span></small></h3>
+          <div class="body"><div id="dlvGuest"></div></div>
+        </div>
+      </aside>
+    </div>
+  </div></div>
+</div>
+<script>
+
+  (function(){
+    function setH(el, open){ el.style.height = open ? (el.firstElementChild.offsetHeight + 8) + 'px' : '0px'; }
+    document.querySelectorAll('.menu-item[data-submenu]').forEach(function(btn){
+      var panel = document.querySelector('.submenu[data-for="' + btn.getAttribute('data-submenu') + '"]');
+      if(!panel) return;
+      setH(panel, btn.classList.contains('open'));
+      if(btn.classList.contains('open')) btn.classList.add('menu-item-active');
+      btn.addEventListener('click', function(){
+        var open = !btn.classList.contains('open');
+        btn.classList.toggle('open', open);
+        btn.classList.toggle('menu-item-active', open);
+        setH(panel, open);
+      });
+    });
+    var t = document.getElementById('navToggle');
+    if(t) t.addEventListener('click', function(){ document.body.classList.toggle('nav-collapsed'); });
+  })();
+
+
+  function navNotice(msg){
+    var n = document.getElementById('navNotice');
+    if(!n){
+      n = document.createElement('div');
+      n.id = 'navNotice';
+      n.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:80;' +
+        'background:#101828;color:#fff;font-size:14px;padding:12px 16px;border-radius:10px;' +
+        'box-shadow:0 8px 24px rgba(16,24,40,.24);max-width:min(560px,90vw);text-align:center';
+      document.body.appendChild(n);
+    }
+    n.textContent = msg;
+    n.style.display = 'block';
+    clearTimeout(n._t);
+    n._t = setTimeout(function(){ n.style.display = 'none'; }, 4000);
+  }
+
+  /**
+   * Populate the header's property switcher and navigate on change, preserving the current page.
+   * Called by whichever page has the hotel list; pages that do not call it keep it hidden.
+   */
+  function wireHotelSwitcher(hotels, currentId){
+    var wrap = document.getElementById('hotelSwitchWrap'), sel = document.getElementById('hotelSwitch');
+    if(!wrap || !sel || !hotels || hotels.length < 2) return;   // nothing to switch between
+    sel.innerHTML = hotels.map(function(h){
+      return '<option value="'+h.id+'"'+(h.id===currentId?' selected':'')+'>'+
+             String(h.name||'(unnamed)').replace(/[&<>"]/g, function(c){
+               return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; })+'</option>';
+    }).join('');
+    wrap.style.display = 'flex';
+    sel.onchange = function(){
+      var u = new URL(location.href);
+      u.searchParams.set('hotelId', sel.value);
+      location.href = u.toString();
+    };
+  }
+
+  function wireNav(hotelId, opts){
+    opts = opts || {};
+    var qs = hotelId ? ('?hotelId=' + encodeURIComponent(hotelId)) : '';
+    var NOT_IN_DEMO = 'That screen is part of the full SelfServe dashboard and is not included in this demo.';
+
+    document.querySelectorAll('.menu-dropdown-item[data-board]').forEach(function(li){
+      li.onclick = function(){
+        if(opts.onBoard) return opts.onBoard(li);
+        // Carry the chosen board across so the target page opens on it, rather than always General.
+        location.href = 'index.html' + qs + (qs ? '&' : '?') + 'board=' + encodeURIComponent(li.getAttribute('data-board'));
+      };
+    });
+
+    document.querySelectorAll('[data-nav="data"]').forEach(function(el){
+      var sec = el.getAttribute('data-section') || '';
+      el.onclick = function(){
+        if(opts.page === 'data'){
+          document.querySelectorAll('.menu-dropdown-item').forEach(function(x){ x.classList.remove('active'); });
+          el.classList.add('active');
+          var t = sec && document.getElementById('sec-' + sec);
+          if(t) t.scrollIntoView({ behavior:'smooth', block:'start' });
+          else navNotice('That section is still loading.');
+          return;
+        }
+        location.href = 'data.html' + qs + (sec ? ('#sec-' + sec) : '');
+      };
+    });
+
+    // Plain page destinations. Keeps ?hotelId= so the property survives the jump.
+    document.querySelectorAll('[data-nav="page"]').forEach(function(el){
+      el.onclick = function(){ location.href = el.getAttribute('data-page') + qs; };
+    });
+
+    document.querySelectorAll('[data-nav="soon"], [data-nav="messages"]').forEach(function(el){
+      el.onclick = function(){ navNotice(NOT_IN_DEMO); };
+    });
+
+    // The bell and the avatar were bound nowhere on any page, while the avatar advertised
+    // aria-label="Open user menu". Say what they are instead of leaving dead buttons.
+    var bell = document.querySelector('.topbar .bell');
+    if(bell) bell.onclick = function(){
+      navNotice('Push notifications go to the guest app in the full product. This demo notifies staff by SMS — see the Dispatch section of any request.');
+    };
+    var avatar = document.querySelector('.topbar .avatar');
+    if(avatar) avatar.onclick = function(){
+      navNotice('Signed in as the demo operator. Sign-in and roles are part of the full dashboard.');
+    };
+  }
+
+
+  var HOTEL_ID = new URLSearchParams(location.search).get('hotelId') || '';
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function when(s){ return s ? new Date(s).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : ''; }
+  var DATA = null;
+
+  /* ---- illustrative roster, for a property with nobody on it yet ----
+     Editable, and deliberately NOT stored on the server: a demo should be able to put the
+     hotelier's own staff on screen without writing invented people into the database, where they
+     would then be routed real requests. So edits live in this browser only, survive a reload, and
+     vanish for everyone else.
+     Four per department is the cap — past that the escalation chain stops being readable, and a
+     chain is the thing this page exists to show. */
+  var SAMPLE_KEY = 'demoStaffSample';
+  var SAMPLE_MAX = 4;
+
+  /* Serialized from src/services/voice/sampleStaff.ts — the SAME people the seeder writes into
+     the employee table, so Sample and Live show one roster instead of two that disagree.
+     (No backticks in here: this comment lives inside a TS template literal.) */
+  var SAMPLE_SEED = {"Housekeeping":[["Maria Alvarez","maria.alvarez@example.com","+14155550142","present"],["Ruth Cole — Head Housekeeper","ruth.cole@example.com","+14155550190","present"],["Ana Duarte","ana.duarte@example.com","+14155550188","absent"]],"Front Desk":[["Devon Clarke","devon.clarke@example.com","+14155550117","present"],["Sofia Reyes — Shift Manager","sofia.reyes@example.com","+14155550121","present"],["Nadia Brandt","nadia.brandt@example.com","+14155550133","present"]],"Food & Beverage":[["Priya Raman","priya.raman@example.com","+14155550164","present"],["Tom Iverson","tom.iverson@example.com","+14155550151","present"],["Elena Costa","elena.costa@example.com","+14155550158","present"]],"Concierge":[["Sam Okafor","sam.okafor@example.com","+14155550175","present"],["Gil Mendes","gil.mendes@example.com","+14155550182","present"],["Hana Weiss","hana.weiss@example.com","+14155550193","present"]],"Maintenance":[["Tomas Beck","tomas.beck@example.com","+14155550136","present"],["Marcus Webb — GM","marcus.webb@example.com","+14155550101","present"],["Owen Pratt","owen.pratt@example.com","+14155550147","present"]]};
+
+  /* What each row falls back to when a field is cleared. Kept beside the row rather than
+     regenerated, so blanking a name shows the name it started as in grey instead of an empty box —
+     a half-filled roster on screen still reads as a roster. */
+  function freshRoster(){
+    var out = { departments: {}, unassigned: [] };
+    Object.keys(SAMPLE_SEED).forEach(function(dept){
+      out.departments[dept] = SAMPLE_SEED[dept].slice(0, SAMPLE_MAX).map(function(p, i){
+        return { id: 's-' + dept.replace(/W/g,'') + '-' + i, name:p[0], email:p[1], phone:p[2],
+                 presence:p[3], ph:{ name:p[0], email:p[1], phone:p[2] } };
+      });
+    });
+    out.unassigned = [{ id:'s-none-0', name:'Jamie Fox', email:'jamie.fox@example.com', phone:'',
+                        presence:'present', ph:{ name:'Jamie Fox', email:'jamie.fox@example.com', phone:'' } }];
+    return out;
+  }
+
+  var ROSTER = null;
+  function roster(){
+    if(ROSTER) return ROSTER;
+    try {
+      var raw = localStorage.getItem(SAMPLE_KEY);
+      if(raw){ ROSTER = JSON.parse(raw); if(ROSTER && ROSTER.departments) return ROSTER; }
+    } catch(e){ /* corrupt or unavailable — start clean rather than showing nothing */ }
+    ROSTER = freshRoster();
+    return ROSTER;
+  }
+  function saveRoster(){
+    try { localStorage.setItem(SAMPLE_KEY, JSON.stringify(ROSTER)); } catch(e){}
+  }
+  function resetRoster(){
+    ROSTER = freshRoster();
+    saveRoster();
+    render();
+  }
+  /* A field the operator emptied falls back to what it started as, so the page never shows a blank
+     where a name should be. */
+  function shown(p, field){ return (p[field] || '').trim() || (p.ph && p.ph[field]) || ''; }
+
+  function sampleData(){
+    var r = roster();
+    var depts = Object.keys(r.departments).map(function(name){
+      var members = r.departments[name].slice();
+      members.sort(function(a,b){ return (a.presence === 'absent') - (b.presence === 'absent'); });
+      var view = members.map(function(p){
+        return { employeeId:p.id, name:shown(p,'name'), department:name, email:shown(p,'email'),
+                 phone:shown(p,'phone') || null, presence:p.presence, raw:p };
+      });
+      return {
+        department:name, members:view, onDuty:view[0] || null,
+        allAway: view.length > 0 && view.every(function(p){ return p.presence === 'absent'; }),
+        chain: view.slice(0,4).map(function(p,i){
+          return { tier:i+1, name:p.name, phone:p.phone, email:p.email, presence:p.presence,
+                   live:i===0, after: i===0 ? null : (i===1 ? '5 min' : (i===2 ? '15 min' : '30 min')),
+                   channels: p.phone ? (i===0 ? 'SMS' : 'SMS + email') : 'email only' };
+        }),
+      };
+    });
+    var withPhone = 0, assigned = 0;
+    depts.forEach(function(d){ d.members.forEach(function(m){ assigned++; if(m.phone) withPhone++; }); });
+    var now = Date.now();
+    return {
+      departments: depts,
+      unassigned: r.unassigned.map(function(p){
+        return { employeeId:p.id, name:shown(p,'name'), department:null, email:shown(p,'email'),
+                 phone:shown(p,'phone') || null, presence:p.presence, raw:p };
+      }),
+      reach: { withPhone: withPhone, assigned: assigned },
+      deliveries: [
+        { department:'Housekeeping', channel:'sms', status:'sent', name:depts[0].members.length ? depts[0].members[0].name : 'Housekeeping', address:'+14155550142', category:'Housekeeping', at:new Date(now-4*60000).toISOString(), toGuest:false },
+        { department:'Guest', channel:'sms', status:'sent', name:'Jordan Ellis', address:'+14155550123', category:'Housekeeping', at:new Date(now-4*60000).toISOString(), toGuest:true },
+        { department:'Food & Beverage', channel:'sms', status:'sent', name:'Priya Raman', address:'+14155550164', category:'Room Service', at:new Date(now-21*60000).toISOString(), toGuest:false },
+        { department:'Maintenance', channel:'email', status:'sent', name:'Tomas Beck', address:'tomas.beck@example.com', category:'Maintenance', at:new Date(now-53*60000).toISOString(), toGuest:false },
+        { department:'Front Desk', channel:'sms', status:'failed', name:'Devon Clarke', address:'+14155550117', category:'Concierge', error:'carrier rejected', at:new Date(now-96*60000).toISOString(), toGuest:false },
+      ],
+    };
+  }
+
+  function chainHtml(dep){
+    if(!dep.chain.length) return '';
+    var parts = [];
+    dep.chain.forEach(function(t, i){
+      if(i) parts.push('<span class="wait">&rarr; after ' + esc(t.after) + ' &rarr;</span>');
+      parts.push('<span class="tier ' + (t.live ? 'now' : 'soon') + (t.presence === 'absent' ? ' away' : '') + '">' +
+        '<b>' + t.tier + '</b>' + esc(t.name) +
+        '<span class="ch">&middot; ' + esc(t.channels) + (t.presence === 'absent' ? ' &middot; away' : '') + '</span></span>');
+    });
+    var note = dep.chain.length === 1
+      ? 'Only one person covers ' + esc(dep.department) + ', so there is nobody to hand off to. ' +
+        'Add someone else to the department and a chain appears here.'
+      : 'Tier 1 is live &mdash; that is who the next ' + esc(dep.department) + ' request is texted ' +
+        'to right now. The rest is the chain the escalation scheduler will walk once it is built; ' +
+        'nothing hands off automatically yet.';
+    return '<div class="chain"><span class="clabel">Escalates</span>' + parts.join('') + '</div>' +
+      '<div class="chainnote">' + note + '</div>';
+  }
+
+  function render(){
+    var d = MODE === 'sample' ? mergeSample() : DATA;
+    document.getElementById('sampleBanner').style.display = MODE === 'sample' ? 'block' : 'none';
+    document.getElementById('mReset').style.display = MODE === 'sample' ? '' : 'none';
+
+    document.getElementById('banner').className = 'banner' + (d.smsLive ? ' live' : '');
+    document.getElementById('banner').innerHTML = d.smsLive
+      ? '<b>Texting is live.</b> A request routed to someone with a number on file really sends them an SMS. Email is recorded but not sent &mdash; there is no email provider wired up.'
+      : '<b>Texting is in simulation.</b> Deliveries are routed, assigned and recorded exactly as they would be, but nothing leaves the building. Set <code>DEMO_DISPATCH_SMS=true</code> to send for real. Email is recorded but never sent either way.';
+
+    var r = d.reach;
+    var reachMsg = r.withPhone === 0
+      ? '<b>No one on the team has a phone number on file</b>, so every staff notification is going out by email only. Add a number below &mdash; put your own on Housekeeping and ask the concierge for towels.'
+      : (r.withPhone === r.assigned
+          ? 'All ' + r.assigned + ' assigned staff can be texted.'
+          : r.withPhone + ' of ' + r.assigned + ' assigned staff can be texted; the rest are emailed only.');
+    document.getElementById('reach').innerHTML = reachMsg;
+    document.getElementById('reach').className = 'banner' + (r.withPhone ? ' live' : '');
+
+    var ro = MODE === 'sample';
+
+    document.getElementById('depts').innerHTML = d.departments.map(function(dep){
+      var covered = dep.members.length > 0;
+      var head = '<div class="dh"><span class="nm">' + esc(dep.department) + '</span>' +
+        (ro ? '<span class="sample">sample</span>' : '') +
+        '<span class="cnt">' + (covered ? dep.members.length + (dep.members.length === 1 ? ' person' : ' people') : 'uncovered') + '</span></div>';
+      if(!covered){
+        return '<div class="dept gap">' + head +
+          '<div class="warn">Nobody covers this department. A request routed here is recorded as <b>skipped</b> and nobody is told.</div></div>';
+      }
+      var cols = '<div class="cols"><span class="c1">Name</span><span class="c2">Email</span>' +
+        '<span class="c3">Phone</span><span class="c4">In today</span>' +
+        (ro ? '<span class="c5"></span>' : '') + '</div>';
+      var rows = dep.members.map(function(p, i){
+        var away = p.presence === 'absent';
+        var raw = p.raw || {};
+        // In sample mode every field is editable and the row can be removed. Values live in this
+        // browser, never on the server — see the note above the roster.
+        var nameCell = ro
+          ? '<input class="edit nameedit" value="' + esc(raw.name || '') + '" placeholder="' +
+            esc((raw.ph && raw.ph.name) || 'Name') + '" data-edit="name" data-id="' + esc(p.employeeId) + '">'
+          : esc(p.name);
+        var emailCell = ro
+          ? '<input class="edit" value="' + esc(raw.email || '') + '" placeholder="' +
+            esc((raw.ph && raw.ph.email) || 'name@hotel.com') + '" data-edit="email" data-id="' + esc(p.employeeId) + '">'
+          : (p.email ? '<div class="em">' + esc(p.email) + '</div>' : '<div class="no">no email on file</div>');
+        return '<div class="person' + (away ? ' away' : '') + '">' +
+          '<div class="who"><div class="n">' + nameCell +
+            (i === 0 && !away ? '<span class="duty">Gets it first</span>' : '') + '</div></div>' +
+          '<div class="contact">' + emailCell + '</div>' +
+          '<div class="ph"><input value="' + esc(ro ? (raw.phone || '') : (p.phone || '')) + '" ' +
+            'placeholder="' + esc(ro ? ((raw.ph && raw.ph.phone) || '+14155550123') : '+14155550123') + '" ' +
+            (ro ? 'class="edit" data-edit="phone" data-id="' + esc(p.employeeId) + '"'
+                : 'data-phone="' + esc(p.employeeId) + '"') + ' />' +
+            (ro ? '' : '<button data-save="' + esc(p.employeeId) + '">Save</button>') + '</div>' +
+          '<select class="' + (away ? 'absent' : '') + '" data-presence="' + esc(p.employeeId) + '">' +
+            '<option value="present"' + (away ? '' : ' selected') + '>Present</option>' +
+            '<option value="absent"' + (away ? ' selected' : '') + '>Absent</option>' +
+          '</select>' +
+          (ro ? '<button class="rm" data-remove="' + esc(p.employeeId) + '" title="Remove">&times;</button>' : '') +
+          '</div>';
+      }).join('');
+      // Adding is only offered in sample mode, and only up to the cap.
+      if(ro && dep.members.length < SAMPLE_MAX){
+        rows += '<div class="addrow"><button data-add="' + esc(dep.department) + '">+ Add someone to ' +
+          esc(dep.department) + '</button><span class="cap">' + dep.members.length + ' of ' + SAMPLE_MAX + '</span></div>';
+      }
+      var allAway = dep.allAway
+        ? '<div class="warn">Everyone in this department is marked away today. A request still goes to ' +
+          esc(dep.onDuty ? dep.onDuty.name : 'someone') + ' &mdash; reaching nobody would be worse.</div>'
+        : '';
+      return '<div class="dept">' + head + chainHtml(dep) + cols + rows + allAway + '</div>';
+    }).join('') +
+    (d.unassigned.length
+      ? '<div class="dept"><div class="dh"><span class="nm">No department</span>' +
+        (ro ? '<span class="sample">sample</span>' : '') +
+        '<span class="cnt">' + d.unassigned.length + '</span></div>' +
+        d.unassigned.map(function(p){
+          return '<div class="person"><div class="who"><div class="n">' + esc(p.name) + '</div>' +
+            '<div class="c">Never receives a routed request &mdash; give them a department to change that.</div></div></div>';
+        }).join('') + '</div>'
+      : '');
+
+    function dlvHtml(list, emptyMsg){
+      return list.length ? list.map(function(x){
+        return '<div class="dlv"><div class="top"><span class="chan ' + esc(x.status) + '">' +
+          esc(x.channel) + ' &middot; ' + esc(x.status) + '</span>' +
+          '<span class="who">' + esc(x.name || 'nobody') + '</span></div>' +
+          '<div class="m">' + esc(x.department || '') +
+          (x.category ? ' &middot; ' + esc(x.category) : '') +
+          (x.at ? ' &middot; ' + when(x.at) : '') +
+          (x.error ? ' &middot; ' + esc(x.error) : '') + '</div></div>';
+      }).join('') : '<p class="snone">' + emptyMsg + '</p>';
+    }
+    var toStaff = d.deliveries.filter(function(x){ return !x.toGuest; });
+    var toGuest = d.deliveries.filter(function(x){ return x.toGuest; });
+    document.getElementById('dlv').innerHTML =
+      dlvHtml(toStaff, 'Nothing sent to staff yet. Ask the concierge for towels and it will appear here.');
+    document.getElementById('dlvGuest').innerHTML =
+      dlvHtml(toGuest, 'Nothing sent to a guest yet.');
+    document.getElementById('dlvGuestCount').textContent = toGuest.length ? '(' + toGuest.length + ')' : '';
+    document.getElementById('dlvTag').style.display = ro ? '' : 'none';
+    document.getElementById('dlvGuestTag').style.display = ro ? '' : 'none';
+  }
+
+  /* The sample roster, but keeping whatever the server told us about THIS instance — whether
+     texting is live is a fact about the deployment, not something to invent. */
+  function mergeSample(){
+    var sd = sampleData();
+    sd.smsLive = DATA ? DATA.smsLive : false;
+    return sd;
+  }
+
+  // Explicit choice wins and is remembered; otherwise pick for them — a property with nobody on it
+  // should show the page rather than five empty departments.
+  var STORED = null;
+  try { STORED = localStorage.getItem('demoStaffMode'); } catch(e){ STORED = null; }
+  var MODE = STORED === 'sample' || STORED === 'live' ? STORED : 'live';
+
+  function setMode(m, remember){
+    MODE = m;
+    if(remember){ try { localStorage.setItem('demoStaffMode', m); } catch(e){} }
+    document.getElementById('mLive').className = m === 'live' ? 'on' : '';
+    document.getElementById('mSample').className = m === 'sample' ? 'on' : '';
+    if(DATA) render();
+  }
+
+  function load(){
+    return fetch('/demo/staff.json' + (HOTEL_ID ? ('?hotelId=' + encodeURIComponent(HOTEL_ID)) : ''), { cache:'no-store' })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        DATA = d;
+        /* The server picks a property when the URL names none, so adopt what it picked: the
+           switcher must show the property actually on screen, and every link out has to carry it
+           or the next page picks again on its own. */
+        HOTEL_ID = d.hotelId || HOTEL_ID;
+        var nm = document.getElementById('hotelName');
+        if(nm){ nm.style.display = 'block'; nm.textContent = d.hotelName || 'All properties'; }
+        var brand = document.getElementById('brandLink');
+        if(brand) brand.setAttribute('href', 'index.html' + (HOTEL_ID ? ('?hotelId=' + encodeURIComponent(HOTEL_ID)) : ''));
+        wireHotelSwitcher(d.allHotels, HOTEL_ID);
+        wireNav(HOTEL_ID, { page:'staff' });
+        var nobody = !d.reach.assigned && !d.unassigned.length;
+        setMode(STORED || (nobody ? 'sample' : 'live'), false);
+      });
+  }
+
+  document.getElementById('mReset').addEventListener('click', function(){ resetRoster(); });
+  document.getElementById('mLive').addEventListener('click', function(){ setMode('live', true); });
+  document.getElementById('mSample').addEventListener('click', function(){ setMode('sample', true); });
+
+  /* ---- sample-mode editing. Nothing here touches the server. ---- */
+  function findPerson(id){
+    var r = roster(), found = null;
+    Object.keys(r.departments).forEach(function(d){
+      r.departments[d].forEach(function(p){ if(p.id === id) found = { p: p, dept: d, list: r.departments[d] }; });
+    });
+    r.unassigned.forEach(function(p){ if(p.id === id) found = { p: p, dept: null, list: r.unassigned }; });
+    return found;
+  }
+
+  // Typing edits the stored roster but does NOT redraw — a redraw mid-word would take the caret
+  // with it. The chain catches up on blur, which is when the name has settled.
+  document.getElementById('depts').addEventListener('input', function(e){
+    var f = e.target.closest('[data-edit]'); if(!f || MODE !== 'sample') return;
+    var hit = findPerson(f.getAttribute('data-id')); if(!hit) return;
+    hit.p[f.getAttribute('data-edit')] = f.value;
+    saveRoster();
+  });
+  document.getElementById('depts').addEventListener('blur', function(e){
+    var f = e.target.closest('[data-edit]'); if(!f || MODE !== 'sample') return;
+    render();
+  }, true);
+
+  document.getElementById('depts').addEventListener('click', function(e){
+    if(MODE !== 'sample') return;
+    var rm = e.target.closest('[data-remove]');
+    if(rm){
+      var hit = findPerson(rm.getAttribute('data-remove'));
+      if(hit){ hit.list.splice(hit.list.indexOf(hit.p), 1); saveRoster(); render(); }
+      return;
+    }
+    var add = e.target.closest('[data-add]');
+    if(add){
+      var dept = add.getAttribute('data-add'), r = roster();
+      if(r.departments[dept] && r.departments[dept].length < SAMPLE_MAX){
+        var newId = 's-' + dept.replace(/W/g,'') + '-' + Date.now();
+        r.departments[dept].push({ id: newId, name:'', email:'', phone:'', presence:'present',
+          ph:{ name:'New team member', email:'name@hotel.com', phone:'+14155550100' } });
+        saveRoster(); render();
+        // Land the caret in the new row. Added rows sort last among the people who are IN, so
+        // without this you have to hunt for the empty box you just created.
+        var box = document.querySelector('[data-edit="name"][data-id="' + newId + '"]');
+        if(box) box.focus();
+      }
+    }
+  });
+
+  // Delegated: the department list is redrawn on every load.
+  document.getElementById('depts').addEventListener('click', function(e){
+    if(MODE === 'sample') return;
+    var b = e.target.closest('[data-save]'); if(!b) return;
+    var id = b.getAttribute('data-save');
+    var input = document.querySelector('[data-phone="' + id + '"]');
+    b.disabled = true; b.textContent = 'Saving...';
+    fetch('/demo/staff/phone', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ employeeId: id, phone: input.value }) })
+      .then(function(r){ return r.json().then(function(d){ return { ok: r.ok && d.ok, d: d }; }); })
+      .then(function(res){
+        if(!res.ok) throw new Error(res.d.error || 'Could not save that.');
+        document.getElementById('saveOut').textContent = '';
+        return load();
+      })
+      .catch(function(err){
+        document.getElementById('saveOut').textContent = err.message;
+        b.disabled = false; b.textContent = 'Save';
+      });
+  });
+
+  // Marking someone away really moves the next request to the next person, so this reloads rather
+  // than just recolouring the control — the chain above has to redraw with the new order.
+  document.getElementById('depts').addEventListener('change', function(e){
+    var sel = e.target.closest('[data-presence]'); if(!sel) return;
+    var id = sel.getAttribute('data-presence');
+    // Sample staff live in this browser, so their rota does too — and the chain still reorders,
+    // which is the behaviour being demonstrated.
+    if(MODE === 'sample'){
+      var hit = findPerson(id);
+      if(hit){ hit.p.presence = sel.value; saveRoster(); render(); }
+      return;
+    }
+    sel.disabled = true;
+    fetch('/demo/staff/presence', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ employeeId: id, status: sel.value }) })
+      .then(function(r){ return r.json().then(function(d){ return { ok: r.ok && d.ok, d: d }; }); })
+      .then(function(res){
+        if(!res.ok) throw new Error(res.d.error || 'Could not change that.');
+        document.getElementById('saveOut').textContent = '';
+        return load();
+      })
+      .catch(function(err){
+        document.getElementById('saveOut').textContent = err.message;
+        sel.disabled = false;
+      });
+  });
+
+  load();
+  // Wired again inside load(), once the server has said which property this actually is.
+  wireNav(HOTEL_ID, { page:'staff' });
+
+</script>
+</body></html>

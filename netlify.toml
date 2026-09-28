@@ -1,0 +1,13 @@
+# Pre-built static export — nothing to compile.
+[build]
+  publish = "."
+  command = ""
+
+# The pages are plain HTML and the data is inert JSON, but there is no reason
+# for any of it to be framed or sniffed.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "same-origin"

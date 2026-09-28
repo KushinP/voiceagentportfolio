@@ -1,0 +1,1258 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Management Dashboard</title><style>
+  :root{
+    --brand-50:#ECF3FF; --brand-100:#DDE9FF; --brand-500:#465FFF; --brand-600:#3641F5;
+    --g-25:#FCFCFD; --g-50:#F9FAFB; --g-100:#F2F4F7; --g-200:#E4E7EC; --g-300:#D0D5DD;
+    --g-400:#98A2B3; --g-500:#667085; --g-600:#475467; --g-700:#344054; --g-800:#1D2939; --g-900:#101828;
+    --link:#1100D8; --link-hover:#0e00b8; --success-500:#12B76A; --success-50:#ECFDF3;
+    --error-500:#F04438; --error-50:#FEF3F2; --danger:#EF4444; --purple:#5b0678;
+    --blue-600:#2563EB; --blue-700:#1D4ED8; --blue-50:#EFF6FF; --blue-500:#3B82F6;
+    --yellow-100:#FEF9C3; --yellow-200:#FEF08A; --yellow-500:#EAB308; --yellow-800:#854D0E;
+    --sidebar:290px; --sidebar-collapsed:90px; --header:70px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:'Outfit',sans-serif;font-size:16px;background:#fff;color:var(--g-900);-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit}
+  svg{display:block}
+
+  /* ---- sidebar (AppSidebar.tsx) ---- */
+  .sidebar{position:fixed;left:0;top:0;height:100vh;width:var(--sidebar);background:#fff;
+           border-right:1px solid var(--g-200);padding:0 20px;z-index:50;display:flex;flex-direction:column;
+           transition:width .3s ease-in-out}
+  .brand{padding:24px 0;display:flex;justify-content:center;cursor:pointer}
+  .brand img{width:75%;height:auto}
+  .brand .hname{font-size:17px;font-weight:600;color:var(--g-900);text-align:center;line-height:1.25}
+  .navscroll{display:flex;flex-direction:column;flex-grow:1;overflow-y:auto;margin-top:16px;scrollbar-width:none}
+  .navscroll::-webkit-scrollbar{display:none}
+  .navsec{margin-bottom:16px;font-size:12px;line-height:20px;text-transform:uppercase;color:var(--g-400);display:flex}
+  nav{margin-bottom:24px}
+  nav>ul{display:flex;flex-direction:column;gap:16px;list-style:none;margin:0;padding:0}
+  .menu-item{position:relative;display:flex;align-items:center;width:100%;gap:12px;padding:8px 12px;
+             font-weight:500;border-radius:8px;font-size:14px;line-height:20px;cursor:pointer;
+             background:none;border:0;text-align:left;color:var(--g-700)}
+  .menu-item-active{background:var(--brand-50);color:var(--brand-500)}
+  .menu-item-inactive:hover{background:var(--g-100)}
+  .menu-item .ic{flex:none;display:block}
+  .menu-item .ic svg{width:24px!important;height:24px!important;color:var(--g-500)}
+  .menu-item-active .ic svg{color:var(--brand-500)}
+  .menu-item .label{flex:1}
+  .menu-item .caret{margin-left:auto;width:20px;height:20px;flex:none;transition:transform .2s}
+  .menu-item .caret svg{width:20px;height:20px}
+  .menu-item.open .caret{transform:rotate(180deg);color:var(--brand-500)}
+  .submenu{overflow:hidden;transition:height .3s;height:0}
+  .submenu>ul{margin:8px 0 0 36px;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+  .menu-dropdown-item{position:relative;display:flex;align-items:center;gap:12px;border-radius:8px;
+                      padding:10px 12px;font-size:14px;line-height:20px;font-weight:500;color:var(--g-700);cursor:pointer}
+  .menu-dropdown-item:hover{background:var(--g-100)}
+  .menu-dropdown-item.active{background:var(--brand-50);color:var(--brand-500)}
+  .count{display:none;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;
+         margin-left:auto;font-size:12px;font-weight:500;color:#fff;background:var(--danger);border-radius:9999px}
+  .count.show{display:inline-flex}
+  .poweredby{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 0}
+  .poweredby p{margin:0 0 8px;font-size:12px;color:var(--purple)}
+  .poweredby img{width:150px;height:40px;object-fit:contain}
+  .setuplink{display:block;margin-bottom:10px;font-size:12px;color:var(--g-500);text-decoration:underline}
+  .setuplink:hover{color:var(--brand-500)}
+  .setuplink.on{color:var(--brand-500);font-weight:600}
+
+  /* collapsed (hamburger) */
+  body.nav-collapsed .sidebar{width:var(--sidebar-collapsed)}
+  body.nav-collapsed .sidebar .label,
+  body.nav-collapsed .sidebar .caret,
+  body.nav-collapsed .sidebar .count,
+  body.nav-collapsed .submenu,
+  body.nav-collapsed .poweredby,
+  body.nav-collapsed .navsec span{display:none}
+  body.nav-collapsed .menu-item{justify-content:center}
+  body.nav-collapsed .main{margin-left:var(--sidebar-collapsed)}
+
+  /* ---- header (AppHeader.tsx) ---- */
+  .main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column;transition:margin-left .3s}
+  .topbar{position:sticky;top:0;z-index:40;background:#fff;border-bottom:1px solid var(--g-200);display:flex;width:100%}
+  .topbar .inner{display:flex;align-items:center;justify-content:space-between;flex-grow:1;padding:12px;height:var(--header)}
+  .topbar h1{font-size:20px;font-weight:600;color:var(--g-800);margin:0}
+  .topbar .left{display:flex;align-items:center;gap:16px}
+  .topbar .right{display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-left:auto}
+  .hamburger{display:flex;align-items:center;justify-content:center;width:44px;height:44px;color:var(--g-500);
+             border:1px solid var(--g-200);border-radius:8px;background:#fff;cursor:pointer}
+  .hamburger:hover{background:var(--g-50)}
+  .bell{position:relative;display:flex;align-items:center;justify-content:center;height:44px;width:44px;
+        color:var(--g-500);border:1px solid var(--g-200);border-radius:9999px;background:#fff;cursor:pointer}
+  .bell:hover{background:var(--g-100)}
+  .bell svg{width:20px;height:20px}
+  .bell .dot{position:absolute;right:-5px;top:-5px;height:20px;width:20px;border-radius:9999px;
+             border:1px solid #fff;background:var(--g-400)}
+  .avatar{width:40px;height:40px;border-radius:9999px;overflow:hidden;background:#fff;border:0;padding:0;cursor:pointer}
+  .avatar svg{width:40px;height:40px;border-radius:9999px}
+  @media (min-width:1024px){ .topbar .inner{padding:16px 24px} }
+
+  /* ---- page ---- */
+  .content{padding:16px;max-width:1536px;width:100%;margin:0 auto}
+  @media (min-width:768px){ .content{padding:24px} }
+  .page{display:flex;flex-direction:column;padding:24px;height:100%}
+  .pagehead{margin-bottom:24px}
+  .pagehead h2{font-size:24px;font-weight:600;color:var(--g-800);margin:0 0 8px}
+  .pagehead p{font-size:14px;color:var(--g-500);margin:0}
+  .scopewarn{margin:0 0 16px;border:1px solid #FEC84B;background:#FFFAEB;color:#93370D;
+             border-radius:12px;padding:12px 16px;font-size:13px}
+  .placeholder{display:flex;align-items:center;justify-content:center;height:320px;color:var(--g-500);font-size:14px;
+               border:1px dashed var(--g-300);border-radius:12px;text-align:center;padding:24px}
+
+  /* ---- tabs (RequestsTab.tsx) ---- */
+  .tabs{width:100%;border-bottom:4px solid var(--g-200);display:flex;align-items:center;gap:6px;margin-bottom:16px}
+  .tab{padding:8px 12px;height:36px;font-size:14px;font-weight:300;color:var(--g-900);background:none;border:0;cursor:pointer;white-space:nowrap}
+  .tab:hover{color:var(--g-900)}
+  .tab.active{font-weight:700;border-bottom:3px solid var(--g-900);margin-bottom:-2px;padding-top:.5px;padding-bottom:.5px}
+
+  /* ---- toolbar (RequestsToolbar.tsx + SearchBar.tsx) ---- */
+  .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px}
+  .tbleft{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:260px}
+  .tbright{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:0 0 auto}
+  .iconbtn{padding:8px;border-radius:6px;border:1px solid var(--g-200);background:#fff;cursor:pointer;
+           display:inline-flex;align-items:center;justify-content:center;color:var(--g-600)}
+  .iconbtn:hover{background:var(--g-100)}
+  .iconbtn svg{width:20px;height:20px}
+  .searchwrap{display:flex;align-items:center;width:100%;flex:1}
+  .searchrel{position:relative;flex-grow:1}
+  .searchrel input{width:100%;padding:8px 48px 8px 12px;border:1px solid var(--g-300);border-radius:4px;
+                   background:var(--g-50);color:var(--g-800);font:inherit;font-size:14px;outline:none}
+  .searchrel input:focus{box-shadow:0 0 0 2px var(--blue-500)}
+  .clearx{position:absolute;right:12px;top:10px;background:none;border:0;color:var(--g-400);cursor:pointer;padding:0}
+  .clearx:hover{color:var(--g-600)}
+  .clearx svg{width:20px;height:20px}
+  .searchgo{margin-left:8px;background:var(--blue-600);color:#fff;padding:8px;border-radius:4px;border:0;cursor:pointer;
+            display:inline-flex;align-items:center;justify-content:center}
+  .searchgo:hover{background:var(--blue-700)}
+  .searchgo svg{width:20px;height:20px}
+  .chip{background:#fff;border:1px solid var(--g-100);border-radius:8px}
+  .chip button{color:var(--g-900);background:none;border:0;cursor:pointer;padding:0}
+  .chip .in{display:flex;align-items:center;gap:8px;margin:0 8px;font-weight:300;font-size:14px;padding:8px}
+  .chip .in svg{width:20px;height:20px}
+  .sel{position:relative;display:inline-block;width:224px}
+  .sel>button{display:flex;width:100%;align-items:center;justify-content:space-between;padding:8px 16px;
+              font-size:14px;color:var(--g-900);background:#fff;border:1px solid var(--g-200);border-radius:6px;cursor:pointer}
+  .sel>button:hover{background:var(--g-100)}
+  .sel>button>span:first-child{padding:0 16px}
+  .sel>button svg{width:16px;height:16px}
+  .menu{position:absolute;z-index:60;left:0;top:calc(100% + 8px);min-width:100%;background:#fff;
+        border:1px solid var(--g-200);border-radius:12px;
+        box-shadow:0 12px 16px -4px rgba(16,24,40,.08),0 4px 6px -2px rgba(16,24,40,.03);padding:8px;display:none}
+  .menu.open{display:block}
+  .menu button{display:block;width:100%;text-align:left;padding:8px 16px;font-size:14px;border:0;background:none;
+               border-radius:6px;cursor:pointer;color:var(--g-700)}
+  .menu button:hover{background:var(--g-100);color:var(--g-900)}
+  /* The in-row status dropdown. Fixed minimum so the button does not resize as the label
+     changes between "Submitted" and "In Progress". */
+  .rowstatus{width:auto;min-width:120px}
+  .rowstatus>button{padding:6px 10px}
+  .rowstatus>button>span:first-child{padding:0}
+  /* Fixed, not absolute. .tablewrap declares overflow-x:auto, which silently computes overflow-y
+     from visible to auto, making it a scroll box on both axes — an absolutely-positioned menu is
+     then clipped to the table and adds a scrollbar instead of floating over the page. Fixed
+     positioning escapes that; JS sets left/top from the trigger's rect. */
+  .rowstatus .menu{position:fixed;min-width:150px;left:0;top:0}
+  .starbtn{display:flex;align-items:center;justify-content:center;padding:8px 16px;font-size:14px;border-radius:6px;
+           border:1px solid var(--g-200);background:#fff;color:var(--g-900);cursor:pointer}
+  .starbtn svg{width:20px;height:20px}
+  .starbtn.on{background:var(--yellow-100);color:var(--yellow-800);border-color:var(--yellow-200)}
+
+  /* ---- table (GeneralReqs.tsx) ---- */
+  .tablewrap{flex:1;overflow-x:auto;overflow-y:visible}
+  table{min-width:100%;width:100%;border-collapse:collapse}
+  thead{border-bottom:3px solid var(--g-200)}
+  thead th,thead td{font-weight:300;font-size:.875rem;color:var(--g-900);text-align:start;white-space:nowrap;padding:12px 4px 12px 8px}
+  thead td.star{width:48px;padding:12px 8px}
+  th.c-guest{width:192px;padding:12px 4px 12px 8px}
+  th.c-room{width:128px;padding:12px 4px 12px 4px}
+  th.c-status{padding:12px 8px 12px 4px}
+  th.c-time{padding:12px 16px 12px 8px}
+  th.c-last{width:160px;padding:12px 8px}
+  tbody tr{border-top:1px solid var(--g-200);cursor:pointer}
+  tbody tr:first-child{border-top:0}
+  tbody tr:hover{background:var(--g-50)}
+  tbody tr.done{background:var(--g-50)}
+  /* Deliberately NOT the .sel class: that one is the dropdown wrapper, and its
+     display:inline-block / width:224px were landing on the <tr> too, collapsing the row. */
+  tbody tr.rowsel{background:var(--blue-50);box-shadow:inset 4px 0 0 0 var(--blue-500)}
+  tbody td{font-size:.875rem;font-weight:300;color:var(--link);vertical-align:middle;white-space:nowrap;padding:12px 4px 12px 8px}
+  tbody td.star{width:48px;padding:12px 8px}
+  tbody td.c-status{min-width:120px;padding:12px 8px 12px 4px}
+  tbody td.c-time{padding:12px 16px 12px 8px}
+  .starcell{background:none;border:0;cursor:pointer;padding:0;color:var(--g-500);display:inline-flex}
+  .starcell svg{width:20px;height:20px}
+  .starcell.on{color:var(--yellow-500)}
+  .statusbtn{display:inline-flex;align-items:center;border:1px solid var(--g-300);border-radius:4px;
+             padding:4px 8px;font-size:14px;background:var(--g-50);color:var(--g-900);cursor:pointer}
+  .statusbtn:hover{background:var(--g-100)}
+  .statusbtn>span{margin-right:8px;white-space:nowrap}
+  .statusbtn svg{width:16px;height:16px}
+  .empty{display:flex;align-items:center;justify-content:center;height:256px;color:var(--g-500);font-size:14px}
+
+  /* ---- pagination ---- */
+  .pager{margin-top:16px;display:flex;align-items:center;justify-content:space-between}
+  .pager .grp{display:flex;align-items:center;gap:8px}
+  .pager span{font-size:14px;color:var(--g-600)}
+  .pager select{border:1px solid var(--g-300);border-radius:4px;padding:4px 32px 4px 12px;font:inherit;font-size:14px;background:#fff}
+  .pager button{padding:4px 12px;border:1px solid var(--g-300);border-radius:4px;background:#fff;cursor:pointer;font:inherit;font-size:14px}
+  .pager button:disabled{opacity:.5;cursor:default}
+  .pager button:not(:disabled):hover{background:var(--g-50)}
+
+  /* ---- drawer ---- */
+  /* Starts below the header (z-index 40) rather than over it, so the hamburger stays clickable
+     while a drawer is open. */
+  .backdrop{position:fixed;inset:var(--header) 0 0 0;z-index:39;display:none}
+  .backdrop.open{display:block}
+  .drawer{position:fixed;right:0;top:var(--header);width:30%;min-width:380px;height:calc(100vh - var(--header));
+          background:#fff;z-index:50;padding:20px;overflow-y:auto;transform:translateX(100%);
+          transition:transform .3s ease-in-out;box-shadow:0 0 15px rgba(0,0,0,.1)}
+  .drawer.open{transform:translateX(0)}
+  .dnav{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .dnav .grp{display:flex;align-items:center;gap:8px}
+  /* Room-service order lines, at the prices quoted. */
+  .otable{width:100%;border-collapse:collapse;font-size:13px}
+  .otable th{text-align:left;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--g-500);
+             font-weight:500;padding:0 0 6px;border-bottom:1px solid var(--g-200)}
+  .otable td{padding:8px 0;border-bottom:1px solid var(--g-100);vertical-align:top;color:var(--g-800)}
+  .otable .oqty{width:52px;text-align:center}
+  .otable .oamt{width:88px;text-align:right;font-variant-numeric:tabular-nums}
+  .otable .ototal td{font-weight:600;border-bottom:0;padding-top:10px}
+  .oinstr{display:block;font-size:12px;color:var(--g-500);margin-top:2px}
+  /* Dispatch trail — who was told, on what channel, and whether it worked. */
+  .drow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--g-100)}
+  /* Outbound to the guest, as opposed to inbound to a department. Tinted so the two
+     directions of the trail are distinguishable at a glance. */
+  .drow.toguest{background:#F9FAFB;margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:6px}
+  .drow:last-child{border-bottom:0}
+  .dchip{font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 8px;border-radius:6px;white-space:nowrap}
+  .dchip.ok{background:#ECFDF3;color:#067647;border:1px solid #ABEFC6}
+  .dchip.sim{background:#F2F4F7;color:#475467;border:1px solid #E4E7EC}
+  .dchip.bad{background:#FEF3F2;color:#B42318;border:1px solid #FECDCA}
+  .dwho{font-size:13px;color:var(--g-800)}
+  .dwhen{font-size:12px;color:var(--g-500);margin-left:auto}
+  .daddr{flex-basis:100%;font-size:12px;color:var(--g-500)}
+  .dmuted{font-size:13px;color:var(--g-500);margin:6px 0}
+  /* How a request arrived. Voice is the one worth noticing. */
+  .chan{font-size:10px;font-weight:700;letter-spacing:.05em;padding:2px 6px;border-radius:5px;margin-left:6px;vertical-align:middle}
+  .chan.voice{background:#EEF4FF;color:#3538CD;border:1px solid #C7D7FE}
+  .chan.text{background:#F4F3FF;color:#5925DC;border:1px solid #D9D6FE}
+  .chan.unver{background:#FFFAEB;color:#B54708;border:1px solid #FEDF89}
+  .hotelswitch{display:flex;align-items:center;gap:8px;margin-right:12px;font-size:13px;color:var(--g-500)}
+  .hotelswitch select{font:inherit;color:var(--g-800);padding:6px 10px;border:1px solid var(--g-300);
+    border-radius:8px;background:#fff;max-width:220px}
+  .chan.notified{background:#ECFDF3;color:#067647;border:1px solid #ABEFC6}
+  /* Amber, not green: the request is legitimate but the caller was not the named guest. */
+  .chan.companion{background:#FFFAEB;color:#B54708;border:1px solid #FEDF89}
+  .pill{border:0;background:none;border-radius:9999px;padding:8px;cursor:pointer;color:var(--g-900);display:inline-flex}
+  .pill:hover{background:var(--g-100)}
+  .pill:disabled{opacity:.5;cursor:not-allowed}
+  .pill svg{width:20px;height:20px}
+  .pill.rot svg{transform:rotate(180deg)}
+  .dstar{display:flex;align-items:center;gap:20px;margin-bottom:16px}
+  .dstar p{margin:0;font-weight:300;color:var(--g-500);font-style:italic}
+  .dstatus{display:flex;align-items:center;margin-bottom:16px}
+  .dstatus>p{margin:0 8px 0 0;font-weight:500;color:var(--g-900)}
+  .dnote{font-size:12px;color:var(--g-500);margin:0 0 8px}
+  .drawer h3{font-size:18px;font-weight:600;color:var(--g-900);margin:0 0 8px;border-bottom:1px solid var(--g-200);padding-bottom:4px}
+  .drawer h3.noline{border-bottom:0;padding-bottom:0;margin-bottom:16px}
+  .dsec{margin-bottom:16px}
+  .desc{background:var(--g-50);border:1px solid var(--g-200);border-radius:8px;padding:16px}
+  .desc p{margin:0;font-weight:300;color:var(--g-900);font-size:16px;line-height:1.625;word-break:break-word}
+  .kv{display:flex;align-items:flex-start;font-size:14px;margin-bottom:12px}
+  .kv .k{width:112px;flex:none;font-weight:500;color:var(--g-700);margin:0}
+  .kv .v{font-weight:300;color:var(--g-900);word-break:break-word;margin:0}
+  .msgbox{border:1px solid var(--g-300);border-radius:8px;overflow:hidden}
+  .msgbox input{width:100%;padding:8px 12px;background:#fff;color:var(--g-900);border:0;
+                border-bottom:1px solid var(--g-300);font:inherit;font-size:14px;outline:none}
+  .msgtype{padding:8px 12px;border-bottom:1px solid var(--g-300)}
+  .msgtype label{display:block;font-size:12px;font-weight:500;color:var(--g-500);margin-bottom:4px}
+  .msgtype select{width:100%;background:#fff;color:var(--g-900);font:inherit;font-size:14px;border-radius:6px;
+                  padding:4px;border:1px solid var(--g-300);outline:none}
+  .msgbox textarea{width:100%;padding:8px 12px 0;background:#fff;color:var(--g-900);border:0;
+                   font:inherit;font-size:14px;outline:none;resize:vertical;min-height:74px}
+  .msgbtns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  .msgbtns button{width:100%;padding:8px 16px;font-size:14px;font-weight:500;border-radius:6px;cursor:pointer}
+  .btn-ghost{color:var(--g-700);background:var(--g-100);border:1px solid var(--g-300)}
+  .btn-ghost:hover{background:var(--g-200)}
+  .btn-send{color:#fff;background:var(--link);border:0}
+  .btn-send:hover{background:var(--link-hover)}
+  .btn-send:disabled{opacity:.5;cursor:not-allowed}
+
+  /* ---- alert / toast (Alert.tsx) ---- */
+  .alert{border-radius:12px;border:1px solid var(--success-500);background:var(--success-50);padding:16px;
+         display:flex;align-items:flex-start;gap:12px}
+  .alert .ai{margin-top:-2px;color:var(--success-500);flex:none}
+  .alert h4{margin:0 0 4px;font-size:14px;font-weight:600;color:var(--g-800)}
+  .alert p{margin:0;font-size:14px;color:var(--g-500)}
+  .toast{position:fixed;bottom:16px;right:16px;z-index:50;display:none}
+  .toast.show{display:block}
+  .sel.picked > button{border-color:var(--brand-300,#B2CCFF);background:var(--brand-50,#F5F8FF);color:var(--g-800);font-weight:500}
+  .inlinealert{margin-top:12px;display:none}
+  .inlinealert.show{display:block}
+  /* Failure variant of the same alert/toast markup. Every write used to swallow its errors, so a
+     rejected request looked identical to a dead button — which is exactly how the status dropdown
+     hid for two rounds of "it doesn't work". */
+  .alert.bad{border-color:var(--error-500,#F04438);background:var(--error-50,#FEF3F2)}
+  .alert.bad .ai{color:var(--error-500,#F04438)}
+
+  /* ---- ground-truth page ---- */
+  .gt h3{font-size:16px;font-weight:600;color:var(--g-800);margin:28px 0 10px;border-bottom:0;padding-bottom:0}
+  .gt table{border:1px solid var(--g-200);border-radius:8px;overflow:hidden}
+  .gt tbody td{color:var(--g-700)}
+  .gt tbody tr{cursor:default}
+  .gt tr.here td{background:var(--success-50)}
+
+  /* ---- control panel ---- */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px}
+  .card{border:1px solid var(--g-200);border-radius:16px;background:#fff}
+  .card>h3{margin:0;padding:20px 24px;font-size:16px;font-weight:600;color:var(--g-800);border-bottom:0}
+  .card>h3 small{display:block;margin-top:4px;font-size:13px;font-weight:400;color:var(--g-500)}
+  .card>.body{padding:20px 24px;border-top:1px solid var(--g-100)}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:500;color:var(--g-700);margin-bottom:6px}
+  .field input,.field select,.field textarea{width:100%;padding:9px 12px;border:1px solid var(--g-300);border-radius:8px;
+    font:inherit;font-size:14px;color:var(--g-800);background:#fff;outline:none}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--brand-500);box-shadow:0 0 0 4px rgba(70,95,255,.12)}
+  .field textarea{min-height:120px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:8px;
+       border:0;background:var(--brand-500);color:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+  .btn:hover{background:var(--brand-600)}
+  .btn:disabled{background:#9CB9FF;cursor:default}
+  .btn.ghost{background:#fff;color:var(--g-700);border:1px solid var(--g-300)}
+  .btn.ghost:hover{background:var(--g-50)}
+  .btn.danger{background:#fff;color:#B42318;border:1px solid #FDA29B}
+  .btn.danger:hover{background:var(--error-50)}
+  .result{margin-top:14px;border-radius:8px;padding:12px 14px;font-size:13px;display:none}
+  .result.ok{display:block;background:var(--success-50);border:1px solid var(--success-500);color:#054F31}
+  .result.err{display:block;background:var(--error-50);border:1px solid var(--error-500);color:#912018}
+  .statgrid{display:grid;grid-template-columns:1fr;gap:10px}
+  .stat{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:8px 0;border-bottom:1px solid var(--g-100)}
+  .stat .l{color:var(--g-500)}
+  .stat .v{color:var(--g-900);font-weight:500;text-align:right;word-break:break-word}
+  .hint{font-size:12px;color:var(--g-500);margin-top:8px;line-height:1.5}
+  code{background:var(--g-100);border-radius:4px;padding:1px 5px;font-size:12px}
+
+  @media (max-width:1024px){ .sidebar{display:none} .main{margin-left:0} .drawer{width:100%;min-width:0} }
+</style>  <link rel="stylesheet" href="assets/fonts.css">
+  <script src="assets/snapshot.js"></script>
+  <script src="assets/offline.js"></script>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <a class="brand" href="index.html" id="brandLink">
+      <img id="hotelLogo" alt="Hotel Logo" style="display:none" />
+      <span class="hname" id="hotelName">&nbsp;</span>
+    </a>
+    <div class="navscroll">
+      <nav>
+        <div class="navsec"><span>Navigation</span></div>
+        <ul>
+          <li>
+            <button class="menu-item menu-item-inactive open" data-submenu="requests">
+              <span class="ic"><svg width="18" height="13" viewBox="0 0 18 13" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 0.5C9.47739 0.5 9.93523 0.680612 10.2728 1.0021C10.6104 1.32359 10.8 1.75963 10.8 2.21429C10.8 2.42 10.764 2.61714 10.692 2.80571C14.355 3.5 17.1 6.42286 17.1 9.92857H0.9C0.9 6.42286 3.645 3.5 7.308 2.80571C7.236 2.61714 7.2 2.42 7.2 2.21429C7.2 1.75963 7.38964 1.32359 7.72721 1.0021C8.06477 0.680612 8.52261 0.5 9 0.5ZM18 12.5H0V10.7857H18V12.5Z" fill="currentColor"/></svg></span><span class="label">Guest Requests</span>
+              <span class="caret"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <div class="submenu" data-for="requests">
+              <ul>
+                <li class="menu-dropdown-item" data-board="general"><span class="label">General</span><span class="count" id="c-general">0</span></li>
+                <li class="menu-dropdown-item" data-board="dining"><span class="label">In-Room Dining</span><span class="count" id="c-dining">0</span></li>
+                <li class="menu-dropdown-item" data-board="reservations"><span class="label">Reservations</span><span class="count" id="c-reservations">0</span></li>
+                <li class="menu-dropdown-item" data-nav="messages"><span class="label">Message History</span></li>
+              </ul>
+            </div>
+          </li>
+          <li>
+            <button class="menu-item menu-item-inactive" data-submenu="data">
+              <span class="ic"><svg width="20" height="11" viewBox="0 0 20 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 10.5V2.5H0V0.5H4V10.5H2ZM20 8.5C20 9.61 19.1 10.5 18 10.5H14V8.5H18V6.5H16V4.5H18V2.5H14V0.5H18C18.5304 0.5 19.0391 0.710714 19.4142 1.08579C19.7893 1.46086 20 1.96957 20 2.5V4C20 4.39782 19.842 4.77936 19.5607 5.06066C19.2794 5.34196 18.8978 5.5 18.5 5.5C18.8978 5.5 19.2794 5.65804 19.5607 5.93934C19.842 6.22064 20 6.60218 20 7V8.5ZM12 8.5V10.5H6V6.5C6 5.39 6.9 4.5 8 4.5H10V2.5H6V0.5H10C10.5304 0.5 11.0391 0.710714 11.4142 1.08579C11.7893 1.46086 12 1.96957 12 2.5V4.5C12 5.61 11.1 6.5 10 6.5H8V8.5H12Z" fill="currentColor"/></svg></span><span class="label">Data Management</span>
+              <span class="caret"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <div class="submenu" data-for="data">
+              <ul>
+                <li class="menu-dropdown-item" data-nav="data" data-section="property"><span class="label">Hotel Info</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="restaurants"><span class="label">Restaurants</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="menu"><span class="label">Menu Items</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="menu"><span class="label">Room Service</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="housekeeping"><span class="label">Housekeeping</span></li>
+                <li class="menu-dropdown-item" data-nav="data" data-section="facilities"><span class="label">Facilities</span></li>
+                <li class="menu-dropdown-item" data-nav="soon"><span class="label">Special Events</span></li>
+                <li class="menu-dropdown-item" data-nav="soon"><span class="label">Special Products</span></li>
+              </ul>
+            </div>
+          </li>
+          <li>
+            <button class="menu-item menu-item-inactive" data-submenu="ai">
+              <span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M10.5 2.25 12.28 7.22 17.25 9 12.28 10.78 10.5 15.75 8.72 10.78 3.75 9 8.72 7.22 10.5 2.25Z"/><path d="M17.75 13.5 18.68 16.32 21.5 17.25 18.68 18.18 17.75 21 16.82 18.18 14 17.25 16.82 16.32 17.75 13.5Z"/></svg></span><span class="label">AI Concierge</span>
+              <span class="caret"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </button>
+            <div class="submenu" data-for="ai">
+              <ul>
+                <li class="menu-dropdown-item" data-nav="page" data-page="journeys.html"><span class="label">Guest Journeys</span></li>
+                <li class="menu-dropdown-item" data-nav="page" data-page="knowledge.html"><span class="label">Knowledge Base</span></li>
+                <li class="menu-dropdown-item" data-nav="page" data-page="agent.html"><span class="label">Agent Settings</span></li>
+                <li class="menu-dropdown-item" data-nav="page" data-page="calls.html"><span class="label">Call Transcripts</span></li>
+                <li class="menu-dropdown-item" data-nav="page" data-page="chat.html"><span class="label">Text the Concierge</span></li>
+              </ul>
+            </div>
+          </li>
+          <li><a class="menu-item menu-item-inactive" data-nav="page" data-page="portfolio.html"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M3 21V6.75a1.5 1.5 0 0 1 1.06-1.43l6-1.85A1.5 1.5 0 0 1 12 4.9V21H3Zm2.6-11.4h2.2v2.1H5.6V9.6Zm0 4.2h2.2v2.1H5.6v-2.1ZM13.5 21V9.9l5.44 1.63A1.5 1.5 0 0 1 20 12.97V21h-6.5Zm2.1-6.3h2.2v2.1h-2.2v-2.1Z"/></svg></span><span class="label">Portfolio</span></a></li>
+          <li><a class="menu-item menu-item-inactive" data-nav="page" data-page="analytics.html"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4.5" height="9" rx="1.5"/><rect x="9.75" y="7" width="4.5" height="14" rx="1.5"/><rect x="16.5" y="3" width="4.5" height="18" rx="1.5"/></svg></span><span class="label">Analytics</span></a></li>
+          <li><a class="menu-item menu-item-inactive" data-nav="page" data-page="staff.html"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z"/></svg></span><span class="label">Employee Management</span></a></li>
+          <li><a class="menu-item menu-item-inactive" data-nav="page" data-page="guests.html"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z"/><path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z"/></svg></span><span class="label">Guest Profiles</span></a></li>
+          <li><a class="menu-item menu-item-inactive" data-nav="soon"><span class="ic"><svg width="5" height="5" viewBox="0 0 10 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.66667 5.1C1.66667 4.165 2.41667 3.4 3.33333 3.4H10L13.3333 0H15V13.6H13.3333L10 10.2H3.33333C2.89131 10.2 2.46738 10.0209 2.15482 9.70208C1.84226 9.38327 1.66667 8.95087 1.66667 8.5H0V5.1H1.66667ZM8.33333 12.75V17H5.83333L4.44167 12.75H3.33333V11.05H10V12.75H8.33333Z" fill="currentColor"/></svg></span><span class="label">Announcements</span></a></li>
+          <li><a class="menu-item menu-item-inactive" data-nav="soon"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 0 0-.986.57c-.166.115-.334.126-.45.083L6.3 5.508a1.875 1.875 0 0 0-2.282.819l-.922 1.597a1.875 1.875 0 0 0 .432 2.385l.84.692c.095.078.17.229.154.43a7.598 7.598 0 0 0 0 1.139c.015.2-.059.352-.153.43l-.841.692a1.875 1.875 0 0 0-.432 2.385l.922 1.597a1.875 1.875 0 0 0 2.282.818l1.019-.382c.115-.043.283-.031.45.082.312.214.641.405.985.57.182.088.277.228.297.35l.178 1.071c.151.904.933 1.567 1.85 1.567h1.844c.916 0 1.699-.663 1.85-1.567l.178-1.072c.02-.12.114-.26.297-.349.344-.165.673-.356.985-.57.167-.114.335-.125.45-.082l1.02.382a1.875 1.875 0 0 0 2.28-.819l.923-1.597a1.875 1.875 0 0 0-.432-2.385l-.84-.692c-.095-.078-.17-.229-.154-.43a7.614 7.614 0 0 0 0-1.139c-.016-.2.059-.352.153-.43l.84-.692c.708-.582.891-1.59.433-2.385l-.922-1.597a1.875 1.875 0 0 0-2.282-.818l-1.02.382c-.114.043-.282.031-.449-.083a7.49 7.49 0 0 0-.985-.57c-.183-.087-.277-.227-.297-.348l-.179-1.072a1.875 1.875 0 0 0-1.85-1.567h-1.843ZM12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z"/></svg></span><span class="label">Settings</span></a></li>
+        </ul>
+      </nav>
+      <div class="poweredby">
+        <a class="setuplink" href="setup.html">Demo setup</a>
+        <p>Powered by</p>
+        <img src="assets/selfserve-logo.png" alt="Logo" width="150" height="40" />
+      </div>
+    </div>
+  </aside>
+<div class="main">
+
+  <header class="topbar"><div class="inner">
+    <div class="left">
+      <button class="hamburger" id="navToggle" aria-label="Toggle Sidebar"><svg width="16" height="12" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M0.583252 1C0.583252 0.585788 0.919038 0.25 1.33325 0.25H14.6666C15.0808 0.25 15.4166 0.585786 15.4166 1C15.4166 1.41421 15.0808 1.75 14.6666 1.75L1.33325 1.75C0.919038 1.75 0.583252 1.41422 0.583252 1ZM0.583252 11C0.583252 10.5858 0.919038 10.25 1.33325 10.25L7.99992 10.25C8.41413 10.25 8.74992 10.5858 8.74992 11C8.74992 11.4142 8.41413 11.75 7.99992 11.75L1.33325 11.75C0.919038 11.75 0.583252 11.4142 0.583252 11ZM1.33325 5.25C0.919038 5.25 0.583252 5.58579 0.583252 6C0.583252 6.41421 0.919038 6.75 1.33325 6.75L14.6666 6.75C15.0808 6.75 15.4166 6.41421 15.4166 6C15.4166 5.58579 15.0808 5.25 14.6666 5.25L1.33325 5.25Z" fill="currentColor"/></svg></button>
+      <h1>Management Dashboard</h1>
+    </div>
+    <div class="right">
+      <!-- Property switcher. The board and data pages scope to ?hotelId=, which previously could
+           only be set by typing a UUID into the URL — so a second property was effectively
+           invisible. Hidden until a page populates it (the setup page has its own pickers). -->
+      <label class="hotelswitch" id="hotelSwitchWrap" style="display:none">
+        <span>Property</span>
+        <select id="hotelSwitch" aria-label="Switch property"></select>
+      </label>
+      <button class="bell" aria-label="Push notifications"><span class="dot"></span><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.25 9a6.75 6.75 0 0 1 13.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 0 1-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 1 1-7.48 0 24.585 24.585 0 0 1-4.831-1.244.75.75 0 0 1-.298-1.205A8.217 8.217 0 0 0 5.25 9.75V9Zm4.502 8.9a2.25 2.25 0 1 0 4.496 0 25.057 25.057 0 0 1-4.496 0Z"/></svg></button>
+      <button class="avatar" aria-label="Open user menu"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" fill="#E4E7EC"/><circle cx="20" cy="15.5" r="6" fill="#98A2B3"/><path d="M8 34c0-6.075 5.373-11 12-11s12 4.925 12 11" fill="#98A2B3"/></svg></button>
+    </div>
+  </div></header>
+  <div class="content"><div class="page">
+    <div id="scopeWarn"></div>
+    <div class="pagehead"><h2 id="pageTitle">General Requests</h2><p id="pageSub"></p></div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="Active">Active</button>
+        <button class="tab" data-tab="Scheduled">Scheduled</button>
+        <button class="tab" data-tab="History">History</button>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="tbleft">
+        <button class="iconbtn" id="refreshBtn" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg></button>
+        <div class="searchwrap">
+          <div class="searchrel">
+            <input id="searchInput" type="text" placeholder="Search requests..." />
+            <button class="clearx" id="clearSearch" aria-label="Clear search" style="display:none"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.04289 16.5418C5.65237 16.9323 5.65237 17.5655 6.04289 17.956C6.43342 18.3465 7.06658 18.3465 7.45711 17.956L11.9987 13.4144L16.5408 17.9565C16.9313 18.347 17.5645 18.347 17.955 17.9565C18.3455 17.566 18.3455 16.9328 17.955 16.5423L13.4129 12.0002L17.955 7.45808C18.3455 7.06756 18.3455 6.43439 17.955 6.04387C17.5645 5.65335 16.9313 5.65335 16.5408 6.04387L11.9987 10.586L7.45711 6.04439C7.06658 5.65386 6.43342 5.65386 6.04289 6.04439C5.65237 6.43491 5.65237 7.06808 6.04289 7.4586L10.5845 12.0002L6.04289 16.5418Z" fill="currentColor"/></svg></button>
+          </div>
+          <button class="searchgo" id="searchGo" aria-label="Execute search"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"/></svg></button>
+        </div>
+      </div>
+      <div class="tbright" id="tbright">
+        <div class="chip" id="chipStatus" style="display:none"><button><div class="in"><span></span><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.04289 16.5418C5.65237 16.9323 5.65237 17.5655 6.04289 17.956C6.43342 18.3465 7.06658 18.3465 7.45711 17.956L11.9987 13.4144L16.5408 17.9565C16.9313 18.347 17.5645 18.347 17.955 17.9565C18.3455 17.566 18.3455 16.9328 17.955 16.5423L13.4129 12.0002L17.955 7.45808C18.3455 7.06756 18.3455 6.43439 17.955 6.04387C17.5645 5.65335 16.9313 5.65335 16.5408 6.04387L11.9987 10.586L7.45711 6.04439C7.06658 5.65386 6.43342 5.65386 6.04289 6.04439C5.65237 6.43491 5.65237 7.06808 6.04289 7.4586L10.5845 12.0002L6.04289 16.5418Z" fill="currentColor"/></svg></div></button></div>
+        <div class="chip" id="chipCat" style="display:none"><button><div class="in"><span></span><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.04289 16.5418C5.65237 16.9323 5.65237 17.5655 6.04289 17.956C6.43342 18.3465 7.06658 18.3465 7.45711 17.956L11.9987 13.4144L16.5408 17.9565C16.9313 18.347 17.5645 18.347 17.955 17.9565C18.3455 17.566 18.3455 16.9328 17.955 16.5423L13.4129 12.0002L17.955 7.45808C18.3455 7.06756 18.3455 6.43439 17.955 6.04387C17.5645 5.65335 16.9313 5.65335 16.5408 6.04387L11.9987 10.586L7.45711 6.04439C7.06658 5.65386 6.43342 5.65386 6.04289 6.04439C5.65237 6.43491 5.65237 7.06808 6.04289 7.4586L10.5845 12.0002L6.04289 16.5418Z" fill="currentColor"/></svg></div></button></div>
+        <div class="sel" id="statusSel"><button type="button"><span>Filter by Status</span><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="menu"></div></div>
+        <div class="sel" id="catSel"><button type="button"><span>Filter by Category</span><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="menu"></div></div>
+        <div class="sel" id="sortSel"><button type="button"><span>Sort By Time</span><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="menu"></div></div>
+        <button class="starbtn" id="starBtn" aria-label="Show favourites"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"/></svg></button>
+      </div>
+    </div>
+
+    <div class="tablewrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table><div class="empty" id="emptyState" style="display:none"></div></div>
+
+    <div class="pager">
+      <div class="grp"><span>Show</span><select id="limitSel"><option value="10">10</option><option value="20">20</option><option value="50">50</option></select><span>items per page</span></div>
+      <div class="grp"><button id="prevBtn">Previous</button><span id="pageInfo">Page 1 of 1</span><button id="nextBtn">Next</button></div>
+    </div>
+  </div></div>
+</div>
+
+<div class="backdrop" id="backdrop"></div>
+<aside class="drawer" id="drawer"></aside>
+<aside class="drawer" id="msgHistory"></aside>
+<div class="toast" id="toast"><div class="alert"><span class="ai"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.25C6.61522 2.25 2.25 6.61522 2.25 12C2.25 17.3848 6.61522 21.75 12 21.75C17.3848 21.75 21.75 17.3848 21.75 12C21.75 6.61522 17.3848 2.25 12 2.25ZM16.0303 10.0303C16.3232 9.73744 16.3232 9.26256 16.0303 8.96967C15.7374 8.67678 15.2626 8.67678 14.9697 8.96967L10.5 13.4393L9.03033 11.9697C8.73744 11.6768 8.26256 11.6768 7.96967 11.9697C7.67678 12.2626 7.67678 12.7374 7.96967 13.0303L9.96967 15.0303C10.2626 15.3232 10.7374 15.3232 11.0303 15.0303L16.0303 10.0303Z"/></svg></span><div><h4>Status Updated</h4><p>Request status has been updated successfully.</p></div></div></div>
+
+<script>
+
+  (function(){
+    function setH(el, open){ el.style.height = open ? (el.firstElementChild.offsetHeight + 8) + 'px' : '0px'; }
+    document.querySelectorAll('.menu-item[data-submenu]').forEach(function(btn){
+      var panel = document.querySelector('.submenu[data-for="' + btn.getAttribute('data-submenu') + '"]');
+      if(!panel) return;
+      setH(panel, btn.classList.contains('open'));
+      if(btn.classList.contains('open')) btn.classList.add('menu-item-active');
+      btn.addEventListener('click', function(){
+        var open = !btn.classList.contains('open');
+        btn.classList.toggle('open', open);
+        btn.classList.toggle('menu-item-active', open);
+        setH(panel, open);
+      });
+    });
+    var t = document.getElementById('navToggle');
+    if(t) t.addEventListener('click', function(){ document.body.classList.toggle('nav-collapsed'); });
+  })();
+
+
+  function navNotice(msg){
+    var n = document.getElementById('navNotice');
+    if(!n){
+      n = document.createElement('div');
+      n.id = 'navNotice';
+      n.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:80;' +
+        'background:#101828;color:#fff;font-size:14px;padding:12px 16px;border-radius:10px;' +
+        'box-shadow:0 8px 24px rgba(16,24,40,.24);max-width:min(560px,90vw);text-align:center';
+      document.body.appendChild(n);
+    }
+    n.textContent = msg;
+    n.style.display = 'block';
+    clearTimeout(n._t);
+    n._t = setTimeout(function(){ n.style.display = 'none'; }, 4000);
+  }
+
+  /**
+   * Populate the header's property switcher and navigate on change, preserving the current page.
+   * Called by whichever page has the hotel list; pages that do not call it keep it hidden.
+   */
+  function wireHotelSwitcher(hotels, currentId){
+    var wrap = document.getElementById('hotelSwitchWrap'), sel = document.getElementById('hotelSwitch');
+    if(!wrap || !sel || !hotels || hotels.length < 2) return;   // nothing to switch between
+    sel.innerHTML = hotels.map(function(h){
+      return '<option value="'+h.id+'"'+(h.id===currentId?' selected':'')+'>'+
+             String(h.name||'(unnamed)').replace(/[&<>"]/g, function(c){
+               return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; })+'</option>';
+    }).join('');
+    wrap.style.display = 'flex';
+    sel.onchange = function(){
+      var u = new URL(location.href);
+      u.searchParams.set('hotelId', sel.value);
+      location.href = u.toString();
+    };
+  }
+
+  function wireNav(hotelId, opts){
+    opts = opts || {};
+    var qs = hotelId ? ('?hotelId=' + encodeURIComponent(hotelId)) : '';
+    var NOT_IN_DEMO = 'That screen is part of the full SelfServe dashboard and is not included in this demo.';
+
+    document.querySelectorAll('.menu-dropdown-item[data-board]').forEach(function(li){
+      li.onclick = function(){
+        if(opts.onBoard) return opts.onBoard(li);
+        // Carry the chosen board across so the target page opens on it, rather than always General.
+        location.href = 'index.html' + qs + (qs ? '&' : '?') + 'board=' + encodeURIComponent(li.getAttribute('data-board'));
+      };
+    });
+
+    document.querySelectorAll('[data-nav="data"]').forEach(function(el){
+      var sec = el.getAttribute('data-section') || '';
+      el.onclick = function(){
+        if(opts.page === 'data'){
+          document.querySelectorAll('.menu-dropdown-item').forEach(function(x){ x.classList.remove('active'); });
+          el.classList.add('active');
+          var t = sec && document.getElementById('sec-' + sec);
+          if(t) t.scrollIntoView({ behavior:'smooth', block:'start' });
+          else navNotice('That section is still loading.');
+          return;
+        }
+        location.href = 'data.html' + qs + (sec ? ('#sec-' + sec) : '');
+      };
+    });
+
+    // Plain page destinations. Keeps ?hotelId= so the property survives the jump.
+    document.querySelectorAll('[data-nav="page"]').forEach(function(el){
+      el.onclick = function(){ location.href = el.getAttribute('data-page') + qs; };
+    });
+
+    document.querySelectorAll('[data-nav="soon"], [data-nav="messages"]').forEach(function(el){
+      el.onclick = function(){ navNotice(NOT_IN_DEMO); };
+    });
+
+    // The bell and the avatar were bound nowhere on any page, while the avatar advertised
+    // aria-label="Open user menu". Say what they are instead of leaving dead buttons.
+    var bell = document.querySelector('.topbar .bell');
+    if(bell) bell.onclick = function(){
+      navNotice('Push notifications go to the guest app in the full product. This demo notifies staff by SMS — see the Dispatch section of any request.');
+    };
+    var avatar = document.querySelector('.topbar .avatar');
+    if(avatar) avatar.onclick = function(){
+      navNotice('Signed in as the demo operator. Sign-in and roles are part of the full dashboard.');
+    };
+  }
+
+(function(){
+  var HOTEL_ID = new URLSearchParams(location.search).get('hotelId') || '';
+  var ICON = {
+    starOutline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"/></svg>', starSolid: '<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z"/></svg>',
+    chevronDown: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>', chevronLeft: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.7083 5L7.5 10.2083L12.7083 15.4167" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>', close: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.04289 16.5418C5.65237 16.9323 5.65237 17.5655 6.04289 17.956C6.43342 18.3465 7.06658 18.3465 7.45711 17.956L11.9987 13.4144L16.5408 17.9565C16.9313 18.347 17.5645 18.347 17.955 17.9565C18.3455 17.566 18.3455 16.9328 17.955 16.5423L13.4129 12.0002L17.955 7.45808C18.3455 7.06756 18.3455 6.43439 17.955 6.04387C17.5645 5.65335 16.9313 5.65335 16.5408 6.04387L11.9987 10.586L7.45711 6.04439C7.06658 5.65386 6.43342 5.65386 6.04289 6.04439C5.65237 6.43491 5.65237 7.06808 6.04289 7.4586L10.5845 12.0002L6.04289 16.5418Z" fill="currentColor"/></svg>',
+    check: '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.25C6.61522 2.25 2.25 6.61522 2.25 12C2.25 17.3848 6.61522 21.75 12 21.75C17.3848 21.75 21.75 17.3848 21.75 12C21.75 6.61522 17.3848 2.25 12 2.25ZM16.0303 10.0303C16.3232 9.73744 16.3232 9.26256 16.0303 8.96967C15.7374 8.67678 15.2626 8.67678 14.9697 8.96967L10.5 13.4393L9.03033 11.9697C8.73744 11.6768 8.26256 11.6768 7.96967 11.9697C7.67678 12.2626 7.67678 12.7374 7.96967 13.0303L9.96967 15.0303C10.2626 15.3232 10.7374 15.3232 11.0303 15.0303L16.0303 10.0303Z"/></svg>'
+  };
+  var BOARDS = {
+    general:      { title:'General Requests',  sub:"Keep track of all your guest's general requests on this dashboard." },
+    dining:       { title:'In-Room Dining',    sub:"Keep track of all your guest's in-room dining orders on this dashboard." },
+    reservations: { title:'Reservations',      sub:"Keep track of all your guest's reservation requests on this dashboard." }
+  };
+  var TAB_STATUS = { Active:['Submitted','InProgress','Delayed'], Scheduled:['Scheduled'], History:['Completed','Cancelled','Failed'] };
+  var FILTER_OPTIONS = { Active:['All','Submitted','In Progress','Delayed'], History:['All','Completed','Cancelled'], Scheduled:[] };
+  var ALL_STATUSES = ['Submitted','In Progress','Delayed','Scheduled','Completed','Cancelled'];
+
+  var state = { board:'general', tab:'Active', search:'', pendingSearch:'', status:'All', cat:'All', sort:'Time',
+                favOnly:false, page:1, limit:10, items:[], selected:null, favs:{}, msgTypes:[],
+                // Which row's status menu is open. The board rebuilds tbody every 3s, so without
+                // this an open menu would silently vanish mid-click.
+                openStatusFor:null,
+                // Signature of the item the drawer was last drawn from. The 3s poll used to redraw
+                // the drawer unconditionally, which meant re-writing its innerHTML — and wiping
+                // whatever the user was typing into it. Now it only redraws when something actually
+                // changed, and preserves the composer when it does.
+                drawerSig:null };
+  try { state.favs = JSON.parse(localStorage.getItem('selfserve:demo:favs')||'{}'); } catch(e) { state.favs = {}; }
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function toDb(s){ return s === 'In Progress' ? 'InProgress' : s; }
+  function label(s){ return s === 'InProgress' ? 'In Progress' : (s || ''); }
+  function displayValue(v){ return (v==null || v==='') ? 'N/A' : v; }
+  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function ord(n){ var s=['th','st','nd','rd'], v=n%100; return n + (s[(v-20)%10]||s[v]||s[0]); }
+  function fmtDate(iso){
+    if(!iso) return 'N/A';
+    var d = new Date(iso); if(isNaN(d.getTime())) return 'Invalid Date';
+    var h = d.getHours(), m = d.getMinutes(), ap = h>=12?'PM':'AM';
+    h = h%12; if(h===0) h=12;
+    return MONTHS[d.getMonth()]+' '+ord(d.getDate())+', '+d.getFullYear()+' \u00b7  '+h+':'+(m<10?'0':'')+m+' '+ap;
+  }
+  function money(a){ return a==null ? 'N/A' : '$'+Number(a).toFixed(2); }
+
+  function boardItems(){ return state.items.filter(function(i){ return i.board === state.board; }); }
+  function filtered(){
+    var allowed = TAB_STATUS[state.tab], q = state.search.toLowerCase();
+    var rows = boardItems().filter(function(i){ return allowed.indexOf(i.status) !== -1; });
+    rows = rows.filter(function(i){
+      if(state.status !== 'All' && i.status !== toDb(state.status)) return false;
+      if(state.cat !== 'All' && (i.category||'') !== state.cat) return false;
+      if(state.favOnly && !state.favs[i.id]) return false;
+      if(!q) return true;
+      return [i.guestName,i.roomNumber,i.category,i.description,i.facilityName].join(' ').toLowerCase().indexOf(q) !== -1;
+    });
+    if(state.sort === 'Request ID'){
+      rows.sort(function(a,b){ return a.id.localeCompare(b.id); });
+    } else {
+      // 'Time' was listed in the dropdown and did nothing. Newest first, which is what a board of
+      // live requests wants; rows with no timestamp sink rather than jumping to the top.
+      var when = function(i){
+        var t = Date.parse(i.createdAt || i.reservationTime || '');
+        return isNaN(t) ? -Infinity : t;
+      };
+      rows.sort(function(a,b){ return when(b) - when(a); });
+    }
+    return rows;
+  }
+
+  var COLS = {
+    general:      [['star',''],['guestName','Guest Name','c-guest'],['roomNumber','Room Number','c-room'],['status','Status','c-status'],['createdAt','Time Submitted','c-time'],['category','Category','c-last']],
+    dining:       [['star',''],['guestName','Guest','c-guest'],['roomNumber','Room Number','c-room'],['status','Status','c-status'],['createdAt','Time Submitted','c-time'],['totalAmount','Total Amount','c-last']],
+    reservations: [['star',''],['guestName','Guest Name','c-guest'],['status','Status','c-status'],['facilityName','Facility Name','c-room'],['reservationTime','Reservation Time','c-time'],['partySize','Party Size','c-room'],['duration','Duration','c-last']]
+  };
+
+  function renderHead(){
+    var cols = COLS[state.board], html = '<tr>';
+    for(var i=0;i<cols.length;i++){
+      if(cols[i][0]==='star') html += '<td class="star"><span></span></td>';
+      else html += '<th class="'+cols[i][2]+'">'+esc(cols[i][1])+'</th>';
+    }
+    document.getElementById('thead').innerHTML = html + '</tr>';
+  }
+  function cellValue(item, key){
+    if(key==='status'){
+      // Same construction as the drawer's dropdown (.sel wrapper + .menu panel). It used to emit a
+      // bare button with nothing reading its data attribute, so it looked identical to the working
+      // one and did nothing. Options omit the status the request is already in, as the real
+      // dashboard does.
+      var choices = ALL_STATUSES.filter(function(s){ return toDb(s) !== item.status; });
+      return '<div class="sel rowstatus" data-status-for="'+esc(item.id)+'">' +
+               '<button type="button" class="statusbtn"><span>'+esc(label(item.status))+'</span>'+ICON.chevronDown+'</button>' +
+               '<div class="menu">' + choices.map(function(s){
+                 return '<button type="button" data-set-status="'+esc(s)+'">'+esc(s)+'</button>';
+               }).join('') + '</div>' +
+             '</div>';
+    }
+    if(key==='createdAt') return esc(fmtDate(item.createdAt));
+    if(key==='reservationTime') return esc(fmtDate(item.reservationTime));
+    if(key==='totalAmount') return esc(money(item.totalAmount));
+    if(key==='duration') return item.duration==null ? 'N/A' : esc(item.duration+' min');
+    if(key==='partySize') return esc(displayValue(item.partySize));
+    return esc(displayValue(item[key]));
+  }
+
+  function render(){
+    var b = BOARDS[state.board];
+    document.getElementById('pageTitle').textContent = b.title;
+    document.getElementById('pageSub').textContent = b.sub;
+    document.getElementById('statusSel').style.display = (state.tab === 'Scheduled') ? 'none' : 'inline-block';
+    renderHead();
+
+    var rows = filtered();
+    var pages = Math.max(1, Math.ceil(rows.length / state.limit));
+    if(state.page > pages) state.page = pages;
+    var slice = rows.slice((state.page-1)*state.limit, state.page*state.limit);
+    var cols = COLS[state.board], html = '';
+
+    for(var r=0;r<slice.length;r++){
+      var it = slice[r], cls = [];
+      if(it.archived) cls.push('done');
+      if(state.selected && state.selected.id === it.id) cls.push('rowsel');
+      html += '<tr class="'+cls.join(' ')+'" data-id="'+esc(it.id)+'">';
+      for(var c=0;c<cols.length;c++){
+        var key = cols[c][0];
+        if(key==='star'){
+          html += '<td class="star"><button class="starcell'+(state.favs[it.id]?' on':'')+'" data-star="'+esc(it.id)+'">'+
+                  (state.favs[it.id]?ICON.starSolid:ICON.starOutline)+'</button></td>';
+        } else {
+          var extra = '';
+          // Chips ride on the guest-name cell: how the request arrived, and whether anyone was
+          // actually told. Both are invisible in the real dashboard, and both are what a client
+          // watching a demo needs to see.
+          if(key === 'guestName'){
+            if(it.channel === 'Voice') extra += '<span class="chan voice" title="Arrived by phone">VOICE</span>';
+            if(it.channel === 'Text') extra += '<span class="chan text" title="Arrived by text">TEXT</span>';
+            // Filed by a caller who named the room but could not be confirmed. Deliberately
+            // allowed for towels and notes; staff need to see it was never verified.
+            if(it.unverified) extra += '<span class="chan unver" title="Caller named this room but could not be identified">UNVERIFIED</span>';
+            // Someone on the reservation who is not the guest it is under — a partner, a parent, a
+            // child — verified by room number + booking name from their own phone.
+            if(it.call && it.call.verified === 'room_name'){
+              extra += '<span class="chan companion" title="Called from '+esc(it.call.callerId || 'another number')+
+                       ' — verified by room number and booking name, not caller ID">COMPANION</span>';
+            }
+            if(it.dispatch && it.dispatch.notified > 0){
+              extra += '<span class="chan notified" title="'+esc(it.dispatch.assignee || 'Staff notified')+'">NOTIFIED</span>';
+            }
+          }
+          html += '<td class="'+cols[c][2]+'">'+cellValue(it,key)+extra+'</td>';
+        }
+      }
+      html += '</tr>';
+    }
+    document.getElementById('tbody').innerHTML = html;
+
+    // Re-open the menu the user had open, since the line above just destroyed it.
+    if(state.openStatusFor){
+      var reopen = document.querySelector('.rowstatus[data-status-for="'+state.openStatusFor+'"] .menu');
+      if(reopen){ reopen.classList.add('open'); placeRowMenu(reopen.parentNode); }
+      else state.openStatusFor = null;
+    }
+
+    var empty = document.getElementById('emptyState');
+    empty.style.display = slice.length ? 'none' : 'flex';
+    empty.textContent = 'No ' + state.tab.toLowerCase() + ' requests available';
+    document.getElementById('pageInfo').textContent = 'Page '+state.page+' of '+pages;
+    document.getElementById('prevBtn').disabled = state.page<=1;
+    document.getElementById('nextBtn').disabled = state.page>=pages;
+    document.getElementById('clearSearch').style.display = state.pendingSearch ? 'block' : 'none';
+
+    renderChips();
+    ['general','dining','reservations'].forEach(function(k){
+      var n = state.items.filter(function(i){ return i.board===k && !i.archived; }).length;
+      var el = document.getElementById('c-'+k);
+      if(el){ el.textContent = n; el.className = 'count' + (n>0?' show':''); }
+    });
+    if(state.selected){
+      var still = state.items.filter(function(i){ return i.id===state.selected.id; })[0];
+      if(still){
+        state.selected = still;
+        // Only rebuild when the request actually changed. Redrawing on every poll destroyed the
+        // message the user was halfway through writing.
+        if(drawerSignature(still) !== state.drawerSig) drawDrawer();
+      }
+    }
+  }
+
+  function renderChips(){
+    var cs = document.getElementById('chipStatus'), cc = document.getElementById('chipCat');
+    var showStatus = state.tab !== 'Scheduled' && state.status !== 'All';
+    cs.style.display = showStatus ? 'block' : 'none';
+    if(showStatus) cs.querySelector('span').textContent = state.status;
+    cc.style.display = state.cat !== 'All' ? 'block' : 'none';
+    if(state.cat !== 'All') cc.querySelector('span').textContent = state.cat;
+  }
+  document.getElementById('chipStatus').onclick = function(){ state.status='All'; state.page=1; buildMenus(); render(); };
+  document.getElementById('chipCat').onclick = function(){ state.cat='All'; state.page=1; buildMenus(); render(); };
+
+  function buildMenus(){
+    fillMenu('statusSel', FILTER_OPTIONS[state.tab] || [], function(v){ state.status=v; state.page=1; buildMenus(); render(); },
+             '', 'Filter by Status', state.status);
+    var cats = {}; boardItems().forEach(function(i){ if(i.category) cats[i.category]=1; });
+    fillMenu('catSel', ['All'].concat(Object.keys(cats).sort()), function(v){ state.cat=v; state.page=1; buildMenus(); render(); },
+             '', 'Filter by Category', state.cat);
+    fillMenu('sortSel', ['Time','Request ID'], function(v){ state.sort=v; state.page=1;
+      document.querySelector('#sortSel button span').textContent = 'Sort By ' + v; buildMenus(); render(); }, 'Sort By ');
+  }
+  function fillMenu(id, values, onPick, prefix, label, current){
+    var host = document.getElementById(id), menu = host.querySelector('.menu');
+    // Show the active selection on the trigger. It always read "Filter by Status", so a filtered
+    // board looked identical to an unfiltered one — and rows appeared to be missing.
+    if(label !== undefined){
+      var lbl = host.querySelector('button span');
+      var on = current && current !== 'All';
+      lbl.textContent = on ? current : label;
+      host.classList.toggle('picked', !!on);
+    }
+    menu.innerHTML = values.map(function(v){ return '<button type="button" data-v="'+esc(v)+'">'+esc((prefix||'')+v)+'</button>'; }).join('');
+    menu.onclick = function(e){
+      var b = e.target.closest('button[data-v]'); if(!b) return;
+      menu.classList.remove('open'); onPick(b.getAttribute('data-v'));
+    };
+    host.querySelector('button').onclick = function(e){ e.stopPropagation();
+      document.querySelectorAll('.menu.open').forEach(function(m){ if(m!==menu) m.classList.remove('open'); });
+      menu.classList.toggle('open'); };
+  }
+  document.addEventListener('click', function(){
+    state.openStatusFor = null;
+    document.querySelectorAll('.menu.open').forEach(function(m){ m.classList.remove('open'); });
+  });
+
+  /* ---------------- drawer ---------------- */
+  function kv(k,v){ return '<div class="kv"><p class="k">'+esc(k)+'</p><p class="v">'+esc(v==null||v===''?'N/A':v)+'</p></div>'; }
+
+  function drawerSignature(it){ try { return JSON.stringify(it); } catch(e){ return String(Math.random()); } }
+
+  /**
+   * What the user has in flight inside the drawer. drawDrawer() replaces the whole subtree, so
+   * anything not captured here is gone: the half-typed message, the caret position, the chosen
+   * message type, an open status menu, a success banner they have not read yet.
+   */
+  function captureDrawerState(){
+    var sub = document.getElementById('msgSubject'), body = document.getElementById('msgBody'),
+        type = document.getElementById('messageType'), ds = document.getElementById('drawerStatus'),
+        alert = document.getElementById('msgAlert');
+    if(!sub && !body) return null;
+    var active = document.activeElement;
+    return {
+      subject: sub ? sub.value : '',
+      body: body ? body.value : '',
+      type: type ? type.value : '',
+      focus: active && active.id ? active.id : null,
+      selStart: active && 'selectionStart' in active ? active.selectionStart : null,
+      selEnd: active && 'selectionEnd' in active ? active.selectionEnd : null,
+      statusOpen: !!(ds && ds.querySelector('.menu.open')),
+      alertShown: !!(alert && alert.classList.contains('show')),
+      alertHtml: alert ? alert.innerHTML : null
+    };
+  }
+
+  function restoreDrawerState(snap){
+    if(!snap) return;
+    var sub = document.getElementById('msgSubject'), body = document.getElementById('msgBody'),
+        type = document.getElementById('messageType'), ds = document.getElementById('drawerStatus'),
+        alert = document.getElementById('msgAlert');
+    if(sub) sub.value = snap.subject;
+    if(body) body.value = snap.body;
+    // Only re-apply a message type that still exists, or the select silently lands on its first option.
+    if(type && snap.type && type.querySelector('option[value="'+snap.type.replace(/"/g,'\"')+'"]')) type.value = snap.type;
+    if(alert && snap.alertShown){ if(snap.alertHtml) alert.innerHTML = snap.alertHtml; alert.classList.add('show'); }
+    if(ds && snap.statusOpen) ds.querySelector('.menu').classList.add('open');
+    if(snap.focus){
+      var el = document.getElementById(snap.focus);
+      if(el && typeof el.focus === 'function'){
+        el.focus();
+        if(snap.selStart != null && 'setSelectionRange' in el){
+          try { el.setSelectionRange(snap.selStart, snap.selEnd); } catch(e){}
+        }
+      }
+    }
+  }
+
+  function drawDrawer(){
+    var it = state.selected; if(!it) return;
+    var snap = captureDrawerState();
+    state.drawerSig = drawerSignature(it);
+    var rows = filtered(), idx = -1;
+    for(var i=0;i<rows.length;i++){ if(rows[i].id===it.id){ idx=i; break; } }
+
+    // Match the row menu: offering the status the request is already in is a no-op dressed as a choice.
+    var opts = ALL_STATUSES.filter(function(s){ return toDb(s) !== it.status; })
+                 .map(function(s){ return '<button type="button" data-set-status="'+esc(s)+'">'+esc(s)+'</button>'; }).join('');
+    var room = kv('Guest Name:', it.guestName) + kv('Room Number:', it.roomNumber);
+    if(it.scheduledTime) room += kv('Scheduled:', fmtDate(it.scheduledTime));
+    if(it.completedAt) room += kv('Completed:', fmtDate(it.completedAt));
+
+    var det = kv('Request ID:', it.id) + kv('Guest Email:', it.guestEmail) + kv('Guest Phone:', it.guestPhone) +
+              kv('Category:', it.category) + kv('Department:', it.department);
+    if(it.board==='dining') det += kv('Total:', money(it.totalAmount));
+    if(it.board==='reservations'){
+      det += kv('Facility:', it.facilityName) + kv('Reservation Time:', it.reservationTime ? fmtDate(it.reservationTime) : 'N/A') + kv('Party Size:', it.partySize);
+    }
+    var typeOpts = state.msgTypes.length
+      ? state.msgTypes.map(function(t){ return '<option value="'+esc(t.typeid)+'">'+esc(t.type)+'</option>'; }).join('')
+      : '<option value="">No types available</option>';
+
+    document.getElementById('drawer').innerHTML =
+      '<div class="dnav"><div class="grp">' +
+        '<button class="pill" id="dPrev" title="Previous request"'+(idx<=0?' disabled':'')+'>'+ICON.chevronLeft+'</button>' +
+        '<button class="pill rot" id="dNext" title="Next request"'+(idx<0||idx>=rows.length-1?' disabled':'')+'>'+ICON.chevronLeft+'</button>' +
+      '</div><button class="pill" id="dClose">'+ICON.close+'</button></div>' +
+      '<div class="dstar"><button class="starcell'+(state.favs[it.id]?' on':'')+'" data-star="'+esc(it.id)+'">'+
+        (state.favs[it.id]?ICON.starSolid:ICON.starOutline)+'</button>' +
+        '<p>Submitted: '+esc(fmtDate(it.createdAt))+'</p></div>' +
+      '<div class="dstatus"><p>Status:</p><div class="sel" id="drawerStatus" style="width:auto">' +
+        '<button type="button" class="statusbtn"><span>'+esc(label(it.status))+'</span>'+ICON.chevronDown+'</button>' +
+        '<div class="menu">'+opts+'</div></div></div>' +
+      '<p class="dnote">The guest is texted when this changes; the Dispatch trail below records what was actually sent.</p>' +
+      '<div class="dsec"><h3>Description</h3><div class="desc"><p>'+esc(it.description || 'No description provided.')+'</p></div></div>' +
+      (it.board === 'dining'
+        ? '<div class="dsec"><h3>Order Information</h3><div id="orderItems"><p class="dmuted">Loading…</p></div></div>'
+        : '') +
+      '<div class="dsec"><h3>Dispatch</h3><div id="dispatchTrail"><p class="dmuted">Loading…</p></div></div>' +
+      '<div class="dsec"><h3>Room Details</h3>'+room+'</div>' +
+      '<div class="dsec"><h3 class="noline">Send a Message</h3>' +
+        '<div class="msgbox">' +
+          '<input id="msgSubject" type="text" placeholder="Enter subject (optional)..." />' +
+          '<div class="msgtype"><label for="messageType">Message Type</label><select id="messageType">'+typeOpts+'</select></div>' +
+          '<textarea id="msgBody" rows="3" placeholder="Enter message content (required)..."></textarea>' +
+        '</div>' +
+        '<div class="msgbtns"><button class="btn-ghost" id="viewHistory">View Message History</button>' +
+        '<button class="btn-send" id="sendGuest">Send to Guest</button></div>' +
+        '<div class="inlinealert" id="msgAlert"><div class="alert"><span class="ai">'+ICON.check+'</span><div><h4></h4><p></p></div></div></div>' +
+      '</div>' +
+      '<div class="dsec"><h3>Request Details</h3>'+det+'</div>';
+
+    loadDispatch(it.id);
+    if(it.board === 'dining') loadOrderItems(it.id, it.totalAmount);
+
+    document.getElementById('dClose').onclick = closeDrawer;
+    var prev = document.getElementById('dPrev'), next = document.getElementById('dNext');
+    prev.onclick = function(){ if(idx>0) openDrawer(rows[idx-1]); };
+    next.onclick = function(){ if(idx>=0 && idx<rows.length-1) openDrawer(rows[idx+1]); };
+    var ds = document.getElementById('drawerStatus');
+    ds.querySelector('button').onclick = function(e){ e.stopPropagation(); ds.querySelector('.menu').classList.toggle('open'); };
+    ds.querySelector('.menu').onclick = function(e){
+      var b = e.target.closest('button[data-set-status]'); if(!b) return;
+      ds.querySelector('.menu').classList.remove('open');
+      setStatus(it, toDb(b.getAttribute('data-set-status')));
+    };
+    document.getElementById('viewHistory').onclick = function(){ openHistory(it); };
+    document.getElementById('sendGuest').onclick = function(){ sendMessage(it, this); };
+
+    restoreDrawerState(snap);
+  }
+  // What the guest actually ordered, at the prices they were quoted.
+  function loadOrderItems(id, total){
+    var host = document.getElementById('orderItems');
+    if(!host) return;
+    fetch('/demo/requests/'+encodeURIComponent(id)+'/items').then(function(r){ return r.json(); }).then(function(d){
+      var rows = d.data || [];
+      if(!rows.length){ host.innerHTML = '<p class="dmuted">No items recorded for this order.</p>'; return; }
+      var body = rows.map(function(x){
+        var line = x.lineTotal != null ? ('$' + Number(x.lineTotal).toFixed(2)) : '—';
+        return '<tr>' +
+          '<td>'+esc(x.name)+(x.instructions ? '<span class="oinstr">'+esc(x.instructions)+'</span>' : '')+'</td>' +
+          '<td class="oqty">'+esc(String(x.quantity))+'</td>' +
+          '<td class="oamt">'+line+'</td>' +
+        '</tr>';
+      }).join('');
+      var foot = total != null
+        ? '<tr class="ototal"><td>Total</td><td></td><td class="oamt">$'+Number(total).toFixed(2)+'</td></tr>'
+        : '';
+      host.innerHTML = '<table class="otable"><thead><tr><th>Item</th><th class="oqty">Qty</th><th class="oamt">Amount</th></tr></thead>' +
+                       '<tbody>'+body+foot+'</tbody></table>';
+    }).catch(function(){ host.innerHTML = '<p class="dmuted">Could not load the order.</p>'; });
+  }
+
+  // The row menu is position:fixed to escape .tablewrap's overflow clipping, so it has to be
+  // placed by hand. Measure only after .open is applied — a display:none element has no size.
+  function placeRowMenu(wrap){
+    var btn = wrap.querySelector('button.statusbtn');
+    var m = wrap.querySelector('.menu');
+    if(!btn || !m) return;
+    var r = btn.getBoundingClientRect();
+    m.style.minWidth = Math.max(150, r.width) + 'px';
+    m.style.left = r.left + 'px';
+    var h = m.offsetHeight;
+    // Flip above the trigger rather than run off the bottom — six statuses on a row near the fold
+    // would otherwise open into empty space below the viewport.
+    m.style.top = (r.bottom + 8 + h > window.innerHeight && r.top - h - 8 > 0)
+      ? (r.top - h - 8) + 'px'
+      : (r.bottom + 8) + 'px';
+  }
+
+  function closeRowMenus(){
+    state.openStatusFor = null;
+    document.querySelectorAll('.rowstatus .menu.open').forEach(function(m){ m.classList.remove('open'); });
+  }
+
+  // A fixed menu does not travel with the page, so follow the trigger on scroll — and close only
+  // once the trigger has actually left the viewport.
+  //
+  // Closing on any scroll looks right but is not: clicking a row below the fold makes the browser
+  // scroll it into view, and that scroll arrives just after the menu opens, shutting it in the same
+  // gesture. Repositioning has no such race.
+  function syncRowMenus(){
+    var open = document.querySelector('.rowstatus .menu.open');
+    if(!open) return;
+    var wrap = open.parentNode;
+    var btn = wrap.querySelector('button.statusbtn');
+    var r = btn.getBoundingClientRect();
+    if(r.bottom < 0 || r.top > window.innerHeight){ closeRowMenus(); return; }
+    placeRowMenu(wrap);
+  }
+  window.addEventListener('scroll', syncRowMenus, true);
+  window.addEventListener('resize', syncRowMenus);
+
+  // Who was told, on which channel, and whether it worked.
+  function loadDispatch(id){
+    var host = document.getElementById('dispatchTrail');
+    if(!host) return;
+    fetch('/demo/requests/'+encodeURIComponent(id)+'/dispatch').then(function(r){ return r.json(); }).then(function(d){
+      var rows = d.data || [];
+      if(!rows.length){ host.innerHTML = '<p class="dmuted">No one has been notified yet.</p>'; return; }
+      host.innerHTML = rows.map(function(x){
+        var cls = x.status === 'sent' ? 'ok' : (x.status === 'failed' ? 'bad' : 'sim');
+        var word = x.status === 'sent' ? 'sent' : (x.status === 'failed' ? 'failed' : (x.status === 'skipped' ? 'not routed' : 'simulated'));
+        // Guest-directed rows are the other half of the trail: what the guest was told, not who
+        // inside the hotel was. Without the arrow the two are indistinguishable on screen.
+        var toGuest = x.department === 'Guest';
+        var who = toGuest ? ('→ guest · ' + esc(x.recipientName || 'Guest'))
+                          : (esc(x.department || '') + (x.recipientName ? ' · ' + esc(x.recipientName) : ''));
+        return '<div class="drow'+(toGuest?' toguest':'')+'">' +
+          '<span class="dchip '+cls+'">'+esc(String(x.channel||'').toUpperCase())+' · '+esc(word)+'</span>' +
+          '<span class="dwho">'+who+'</span>' +
+          '<span class="dwhen">'+esc(x.sentAt ? fmtDate(x.sentAt) : '')+'</span>' +
+          (x.recipientAddress ? '<span class="daddr">'+esc(x.recipientAddress)+'</span>' : '') +
+          (x.error ? '<span class="daddr">'+esc(x.error)+'</span>' : '') +
+        '</div>';
+      }).join('');
+    }).catch(function(){ host.innerHTML = '<p class="dmuted">Could not load dispatch.</p>'; });
+  }
+
+  function openDrawer(it){ state.selected = it;
+    document.getElementById('msgHistory').classList.remove('open');
+    drawDrawer();
+    document.getElementById('drawer').classList.add('open');
+    document.getElementById('backdrop').classList.add('open'); render(); }
+  function closeDrawer(){ state.selected = null; state.drawerSig = null;
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('msgHistory').classList.remove('open');
+    document.getElementById('backdrop').classList.remove('open'); render(); }
+  document.getElementById('backdrop').onclick = closeDrawer;
+
+  function openHistory(it){
+    var panel = document.getElementById('msgHistory');
+    panel.innerHTML = '<div class="dnav"><h3 class="noline" style="margin:0">Message History (This Request)</h3>' +
+      '<button class="pill" id="hClose">'+ICON.close+'</button></div><div id="hBody"><p style="color:#667085;font-size:14px">Loading...</p></div>';
+    document.getElementById('drawer').classList.remove('open');
+    panel.classList.add('open');
+    document.getElementById('hClose').onclick = function(){ panel.classList.remove('open'); openDrawer(it); };
+    fetch('/demo/requests/'+encodeURIComponent(it.id)+'/messages').then(function(r){ return r.json(); }).then(function(d){
+      var rows = d.data || [];
+      document.getElementById('hBody').innerHTML = rows.length
+        ? rows.map(function(m){
+            return '<div style="border:1px solid #E4E7EC;border-radius:8px;padding:16px;background:#F9FAFB;margin-bottom:12px">' +
+              '<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:500">' +
+              '<span>'+esc(m.type)+'</span><span style="color:#667085;font-weight:300">'+esc(fmtDate(m.createdAt))+'</span></div>' +
+              (m.subject ? '<p style="margin:8px 0 0;font-size:14px"><b>Subject:</b> '+esc(m.subject)+'</p>' : '') +
+              '<p style="margin:8px 0 0;font-size:14px;font-weight:300">'+esc(m.content)+'</p></div>'; }).join('')
+        : '<p style="color:#667085;font-size:14px">No messages found for this request</p>';
+    }).catch(function(){
+      // Without this the panel sat on "Loading..." indefinitely.
+      var hb = document.getElementById('hBody');
+      if(hb) hb.innerHTML = '<p style="color:#B42318;font-size:14px">Could not load the message history. Close and try again.</p>';
+    });
+  }
+
+  function sendMessage(it, btn){
+    var bodyEl = document.getElementById('msgBody');
+    var body = bodyEl.value.trim();
+    // The placeholder says "(required)"; clicking Send with it empty used to do nothing at all.
+    if(!body){
+      drawerAlert('Message is empty', 'Type the message you want to send before hitting Send.', true);
+      bodyEl.focus();
+      return;
+    }
+    btn.disabled = true;
+    fetch('/demo/requests/'+encodeURIComponent(it.id)+'/message', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ content: body, subject: document.getElementById('msgSubject').value,
+                             typeId: document.getElementById('messageType').value })
+    }).then(function(r){ return r.json().then(function(b){ return { http:r.status, body:b }; }); })
+      .then(function(res){
+        var b = res.body;
+        if(b && b.ok){
+          bodyEl.value = '';
+          document.getElementById('msgSubject').value = '';
+          drawerAlert('', b.sentTo ? ('Message sent to ' + b.sentTo + '.') : 'Message sent to the guest.', false);
+          return;
+        }
+        drawerAlert('Message not sent', errText(b, 'The server rejected it (HTTP '+res.http+').'), true);
+      })
+      .catch(function(){
+        drawerAlert('Message not sent', 'The dashboard could not reach the server.', true);
+      })
+      .then(function(){ btn.disabled = false; });
+  }
+
+  /**
+   * Toast. Defaults to the "Status Updated" success it has always shown; pass a title/body to say
+   * something else, and bad=true to make it a failure. Errors used to produce nothing at all.
+   */
+  var toastTimer = null;
+  function toast(title, body, bad){
+    var t = document.getElementById('toast'), a = t.querySelector('.alert');
+    t.querySelector('h4').textContent = title || 'Status Updated';
+    t.querySelector('p').textContent  = body  || 'Request status has been updated successfully.';
+    a.classList.toggle('bad', !!bad);
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('show'); }, bad ? 6000 : 3000);
+  }
+
+  /** Turn whatever came back from a failed fetch into one readable sentence. */
+  function errText(res, fallback){
+    if(res && res.error){
+      if(typeof res.error === 'string') return res.error;
+      if(res.error.message) return res.error.message;
+    }
+    return fallback || 'Something went wrong. Please try again.';
+  }
+
+  /** The drawer's own inline banner, reused for failures as well as the send confirmation. */
+  function drawerAlert(title, body, bad){
+    var a = document.getElementById('msgAlert'); if(!a) return;
+    a.querySelector('.alert').classList.toggle('bad', !!bad);
+    a.querySelector('h4').textContent = title || '';
+    a.querySelector('p').textContent = body || '';
+    a.classList.add('show');
+    setTimeout(function(){ a.classList.remove('show'); }, bad ? 6000 : 3000);
+  }
+  function setStatus(item, status){
+    fetch('/demo/requests/'+encodeURIComponent(item.id)+'/status', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ status: status, kind: item.kind })
+    }).then(function(r){ return r.json().then(function(b){ return { http:r.status, body:b }; }); })
+      .then(function(res){
+        var b = res.body;
+        if(b && b.ok){ item.status = status; toast(); render(); load(); return; }
+        // A no-op is not a success. Wake-up rows return ok:false/action:'noop', and the board used
+        // to toast "Status Updated" and then quietly revert on the next poll.
+        if(b && b.action === 'noop'){
+          toast('Not supported here', "This row's status cannot be changed from the board.", true);
+          render();
+          return;
+        }
+        toast('Could not update status', errText(b, 'The server rejected the change (HTTP '+res.http+').'), true);
+        render();
+      })
+      .catch(function(e){
+        toast('Could not update status', 'The dashboard could not reach the server.', true);
+        render();
+      });
+  }
+
+  /* ---------------- events ---------------- */
+  document.getElementById('tbody').addEventListener('click', function(e){
+    var star = e.target.closest('button[data-star]');
+    if(star){ e.stopPropagation(); toggleFav(star.getAttribute('data-star')); return; }
+
+    // Status dropdown. Must stopPropagation on both branches: otherwise the click reaches the
+    // row handler below (opening the drawer) and the document-level closer, which would shut the
+    // menu in the same tick it opened.
+    var opt = e.target.closest('button[data-set-status]');
+    if(opt && e.target.closest('.rowstatus')){
+      e.stopPropagation();
+      var host = opt.closest('.rowstatus');
+      var rowId = host.getAttribute('data-status-for');
+      var rowItem = state.items.filter(function(i){ return i.id === rowId; })[0];
+      state.openStatusFor = null;
+      host.querySelector('.menu').classList.remove('open');
+      if(rowItem) setStatus(rowItem, toDb(opt.getAttribute('data-set-status')));
+      return;
+    }
+    var trigger = e.target.closest('.rowstatus > button.statusbtn');
+    if(trigger){
+      e.stopPropagation();
+      var wrap = trigger.parentNode;
+      var id = wrap.getAttribute('data-status-for');
+      var isOpen = wrap.querySelector('.menu').classList.contains('open');
+      document.querySelectorAll('.menu.open').forEach(function(m){ m.classList.remove('open'); });
+      state.openStatusFor = isOpen ? null : id;
+      if(!isOpen){ wrap.querySelector('.menu').classList.add('open'); placeRowMenu(wrap); }
+      return;
+    }
+    var tr = e.target.closest('tr[data-id]'); if(!tr) return;
+    var it = state.items.filter(function(i){ return i.id === tr.getAttribute('data-id'); })[0];
+    if(it) openDrawer(it);
+  });
+  document.getElementById('drawer').addEventListener('click', function(e){
+    var star = e.target.closest('button[data-star]');
+    if(star){ e.stopPropagation(); toggleFav(star.getAttribute('data-star')); }
+  });
+  function toggleFav(id){
+    if(state.favs[id]) delete state.favs[id]; else state.favs[id] = 1;
+    localStorage.setItem('selfserve:demo:favs', JSON.stringify(state.favs));
+    render(); if(state.selected) drawDrawer();
+  }
+
+  wireNav(HOTEL_ID, { page:'board', onBoard: function(li){
+    document.querySelectorAll('.menu-dropdown-item').forEach(function(x){ x.classList.remove('active'); });
+    li.classList.add('active');
+    state.board = li.getAttribute('data-board'); state.page = 1; state.cat = 'All'; state.status = 'All';
+    closeDrawer(); buildMenus(); render();
+  }});
+
+  document.getElementById('tabs').onclick = function(e){
+    var b = e.target.closest('.tab'); if(!b) return;
+    document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active'); state.tab = b.getAttribute('data-tab'); state.status='All'; state.page=1;
+    closeDrawer(); buildMenus(); render();
+  };
+  document.getElementById('searchInput').oninput = function(e){
+    state.pendingSearch = e.target.value;
+    if(!e.target.value){ state.search=''; state.page=1; render(); }
+    document.getElementById('clearSearch').style.display = e.target.value ? 'block' : 'none';
+  };
+  document.getElementById('searchInput').onkeydown = function(e){ if(e.key==='Enter') doSearch(); };
+  document.getElementById('searchGo').onclick = doSearch;
+  function doSearch(){ state.search = state.pendingSearch; state.page = 1; render(); }
+  document.getElementById('clearSearch').onclick = function(){
+    document.getElementById('searchInput').value=''; state.pendingSearch=''; state.search=''; state.page=1; render(); };
+  document.getElementById('limitSel').onchange = function(e){ state.limit = parseInt(e.target.value,10); state.page=1; render(); };
+  document.getElementById('prevBtn').onclick = function(){ if(state.page>1){ state.page--; render(); } };
+  document.getElementById('nextBtn').onclick = function(){ state.page++; render(); };
+  document.getElementById('refreshBtn').onclick = function(){ load(); };
+  document.getElementById('starBtn').onclick = function(){
+    state.favOnly = !state.favOnly;
+    this.classList.toggle('on', state.favOnly);
+    this.innerHTML = state.favOnly ? ICON.starSolid : ICON.starOutline;
+    state.page=1; render(); };
+
+  function load(){
+    var url = '/demo/requests' + (HOTEL_ID ? ('?hotelId=' + encodeURIComponent(HOTEL_ID)) : '');
+    fetch(url, { cache:'no-store' }).then(function(r){ return r.json(); }).then(function(d){
+      state.items = d.items || [];
+      var img = document.getElementById('hotelLogo'), nm = document.getElementById('hotelName');
+      if(d.hotel && d.hotel.logo){ img.src = d.hotel.logo; img.style.display = 'block'; nm.style.display = 'none'; }
+      else { img.style.display = 'none'; nm.style.display = 'block'; nm.textContent = (d.hotel && d.hotel.name) || 'All properties'; }
+      document.getElementById('brandLink').setAttribute('href', 'index.html' + (HOTEL_ID ? ('?hotelId='+encodeURIComponent(HOTEL_ID)) : ''));
+      wireHotelSwitcher(d.allHotels, (d.hotel && d.hotel.id) || HOTEL_ID);
+      var warn = document.getElementById('scopeWarn');
+      warn.innerHTML = d.scoped ? '' :
+        '<div class="scopewarn">Showing <b>every</b> property — no hotel selected. Set VOICE_DEFAULT_HOTEL_ID or add <code>?hotelId=</code> to scope this board to one hotel.</div>';
+      buildMenus(); render();
+    }).catch(function(){});
+  }
+  fetch('/demo/message-types').then(function(r){ return r.json(); }).then(function(d){ state.msgTypes = d.data || []; });
+  // Another page may have linked here asking for a specific board.
+  var wanted = new URLSearchParams(location.search).get('board');
+  var initial = document.querySelector('.menu-dropdown-item[data-board="'+(wanted||'general').replace(/[^a-z]/gi,'')+'"]')
+             || document.querySelector('.menu-dropdown-item[data-board="general"]');
+  state.board = initial.getAttribute('data-board');
+  initial.classList.add('active');
+  load(); setInterval(load, 3000);
+})();
+</script>
+</body></html>
