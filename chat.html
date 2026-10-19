@@ -779,8 +779,17 @@
         d.sms && d.sms.twilioConfigured ? 'webhook ready' : 'needs Twilio credentials';
 
       if(!d.ready){
-        document.getElementById('warn').style.display = 'block';
-        document.getElementById('warnWhy').textContent = d.reason || 'the text agent is not configured';
+        var warn = document.getElementById('warn');
+        warn.style.display = 'block';
+        // The static export captures whatever the exporting server reported, which is a
+        // config error a visitor can do nothing about. Say what this copy actually is.
+        if(window.__DEMO_SNAPSHOT){
+          warn.innerHTML = '<b>This is a static snapshot.</b> There is no agent behind this copy, so ' +
+            'messages will not send. Talk to the live one at ' +
+            '<a href="https://demo.kushmallick.us">demo.kushmallick.us</a>.';
+        } else {
+          document.getElementById('warnWhy').textContent = d.reason || 'the text agent is not configured';
+        }
         setEnabled(false);
       }
     });

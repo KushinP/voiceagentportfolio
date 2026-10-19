@@ -7,6 +7,10 @@ right department and assigned to whoever is on duty.
 
 **Live demo:** [demo.kushmallick.us](https://demo.kushmallick.us)
 
+![Requests board: calls arrive as routed requests](docs/screenshots/requests.png)
+
+![Call transcripts: what was said, turn by turn](docs/screenshots/transcripts.png)
+
 This repository is a static snapshot of the dashboard: twelve screens with real
 captured data, running with no server, no build step and no network calls. Click
 around it the way an innkeeper would.
